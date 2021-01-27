@@ -1,0 +1,67 @@
+Datasets for Periocular Images
+
+
+
+UBIRIS V2 - Need to Apply
+UBIPR - Got the database
+IITD Multispectral (IMP) - Need to apply
+MobBio
+FRGC face dataset - provides Gender and Ethnicity - Need to apply
+CROSS EYED dataset - Applied already
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Hallucinating the Full Face from the Periocular Region via Dimensionally Weighted K-SVD
+Periocular Recognition Using Unsupervised Convolutional RBM Feature Learning
+Accurate Periocular Recognition under Less Constrained Environment Using Semantics-Assisted Convolutional Neural Network.
+
+
+
+How about using a masked dataset to capture only the periocular area and then generate the facial image, the attributes generated using the periocular region could also be used for face generation.
+
+
+UBIPr - 10198 images 
+
+
+ The CROSS-EYED, [3] - ”Reading Cross-spectrum
+Iris/Periocular Dataset,” is a benchmark dataset for the iden-
+tification competition presented in BTAS 2016. It is composed of two eyes images in both visible (VIS/RGB) and
+NIR. The images are acquired from a distance of around 1.5
+m. The images acquired under NIR wavelength have a sin-
+gle channel, while the visible spectrum iris images contain
+three channels of information. The images present a realis-
+tic indoor environment with a realistic illumination condi-
+tion, and there are large variations in the ethnicity and eye
+color as well as realistic and challenging illumination reflec-
+tions. The database is constructed with 120 subjects. Each
+subject is composed of two additional folders, one NIR and
+one VIS. For each subject, there are eight images (960 left
+and 960 right, 1,920 images per spectrum, 3,840 in total),
+as demonstrated by 632 males and 328 females images with
+18 females subject with visual evidence of make-up. See
+Figure 1. [Gender Classification from Multispectral Periocular Images]
+
+This database contains 5,126 left and
+5,126 right periocular images from 344 subjects, and simu-
+lates less constrained periocular acquisition environment under
+visible spectrum. Noticeable amount of images from this
+dataset present occlusion, off-angle or illumination variation.
+For the experiments, only left periocular images are used.
+We employed the same training set of 3,359 images as used
+in [9] for model learning. The remaining 1,767 left images are
+used for test phase for performance evaluation. This database
+is used for open-world experiments and therefore no subjects
+are overlapping between the training and test sets. [Improving Periocular Recognition by Explicit Attention to Critical Regions in Deep Neural Network]

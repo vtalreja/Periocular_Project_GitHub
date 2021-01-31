@@ -54,7 +54,10 @@ as demonstrated by 632 males and 328 females images with
 18 females subject with visual evidence of make-up. See
 Figure 1. [Gender Classification from Multispectral Periocular Images]
 
-This database contains 5,126 left and
+
+
+
+UBIPR: This database contains 5,126 left and
 5,126 right periocular images from 344 subjects, and simu-
 lates less constrained periocular acquisition environment under
 visible spectrum. Noticeable amount of images from this
@@ -65,3 +68,6 @@ in [9] for model learning. The remaining 1,767 left images are
 used for test phase for performance evaluation. This database
 is used for open-world experiments and therefore no subjects
 are overlapping between the training and test sets. [Improving Periocular Recognition by Explicit Attention to Critical Regions in Deep Neural Network]
+
+Total Images are 10138: Number of Males is 362, Females is 142
+Images have been taken at 5 distances, so the image sizes (h x w) are (401 x 501),(441 x 561), (501 x 651),(651 x 801), (801 x 1001), There are 3 images for each image size. 

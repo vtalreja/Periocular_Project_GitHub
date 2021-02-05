@@ -82,7 +82,8 @@ def copy_left_right_folder(Image_dir, i, final_destination_folder, Only_Images=F
 
 
 def consolidate_left_right(Image_dir, Destination_folder, Only_Images=False, eye='both'):
-    '''Consolidate the left and right image folders in a single subject folder'''
+    '''Consolidate the left and right image folders into separate folders or consolidate
+    them into a single folder depending on the flag 'eye' '''
     joint_class_name = 0
     for i in range(1, 517, 2):
         joint_class_name = joint_class_name + 1
@@ -98,8 +99,8 @@ def consolidate_left_right(Image_dir, Destination_folder, Only_Images=False, eye
             raise ValueError('flag eye can take only left, right or both value')
 
 
-def count_classes_more_images(Image_dir):
-    '''Find the number of subjects with more than 30 images. implies 2 sessions'''
+def count_classes_more_images(Image_dir,count):
+    '''Find the number of subjects who have more than 'count' images'''
     class_names = os.listdir(Image_dir)
     class_names = sorted(class_names)
     li_classes = []
@@ -107,14 +108,39 @@ def count_classes_more_images(Image_dir):
     for class_name in class_names:
         class_folder = os.path.join(Image_dir, class_name)
         li_files = glob.glob(class_folder + '/*.jpg')
-        if len(li_files) > 30:
+        if len(li_files) > count:
             li_classes.append(class_name)
         if len(li_files) == 0:
             li_empty_folders.append(class_name)
     print(
-        'Total number of subjects with more than 30 images are {} and they are {}'.format(len(li_classes), li_classes))
+        'Total number of subjects with more than {} images are {} and they are {}'.format(count,len(li_classes), li_classes))
     print(
         'Total number of subjects with 0 images are {} and they are {}'.format(len(li_empty_folders), li_empty_folders))
+
+def split_classes_more_images(Image_dir,count,Only_Images):
+    class_names = os.listdir(Image_dir)
+    class_names = sorted(class_names)
+    li_classes = []
+    for class_name in class_names:
+        class_folder = os.path.join(Image_dir, class_name)
+        if Only_Images:
+            li_files = glob.glob(class_folder + '/*.jpg')
+        else:
+            li_files = os.listdir(class_folder)
+        if len(li_files) > count:
+            li_classes.append(class_name)
+            for file_name in li_files:
+                if Only_Images:
+                    base_name = os.path.basename(file_name)
+                else:
+                    base_name = file_name
+                if 'S2' in base_name:
+                    if not os.path.exists (class_folder+'_S2'):
+                        os.mkdir(class_folder+'_S2')
+                    shutil.move(os.path.join(class_folder,file_name),class_folder+'_S2')
+
+
+
 
 
 def split_male_female(Image_dir, Destination_folder):
@@ -153,6 +179,7 @@ def split_male_female(Image_dir, Destination_folder):
 
 
 def copy_images_training(Image_dir, Destination_folder):
+    '''Move only the image with height 561 or 651 to the Destination folder'''
     gender_dict = {}
     for gender in ['Male', 'Female']:
         gender_dict[gender] = []
@@ -184,11 +211,20 @@ def create_dir(folder):
     if not (os.path.exists(folder)):
         os.mkdir(folder)
 
+def diff_two_folders(folder_1, folder_2):
+    li_files_1=os.listdir(folder_1)
+    li_files_2=os.listdir(folder_2)
+
+    difference_list = (list(list(set(li_files_1)-set(li_files_2)) + list(set(li_files_2)-set(li_files_1))))
+    print(difference_list)
+
+
 
 if __name__ == '__main__':
     Image_folder = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/UBIPeriocular'
     Class_folder = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders'
-    Class_folder_single_eye = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders_Left'
+    Class_folder_single_eye = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders_Left_Images'
+    Class_folder_single_eye_split = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders_Left_Images_Split'
     Consolidated_folder = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Consolidated_Folders'
     Male_Female_folder = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Male_Female_Folders'
     Male_Female_training_folder = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Male_Female_Training_Folders_Images'
@@ -199,10 +235,13 @@ if __name__ == '__main__':
     create_dir(Male_Female_folder)
     create_dir(Male_Female_training_folder)
     create_dir(Class_folder_single_eye)
+    create_dir(Class_folder_single_eye_split)
 
     # create_class_folders(Image_folder, Class_folder)
     # count_left_right_eye(Class_folder)
-    # consolidate_left_right(Class_folder,Class_folder_single_eye,False,'left')
-    # count_classes_more_images(Consolidated_folder)
+    # consolidate_left_right(Class_folder,Class_folder_single_eye,True,'left')
+    # count_classes_more_images(Consolidated_folder,15)
+    # count_classes_more_images(Class_folder_single_eye_split,15)
     # split_male_female(Consolidated_folder,Male_Female_folder)
     # copy_images_training(Male_Female_folder,Male_Female_training_folder)
+    # split_classes_more_images(Class_folder_single_eye_split,30,False)

@@ -1,7 +1,5 @@
 Datasets for Periocular Images
 
-
-
 UBIRIS V2 - Need to Apply
 UBIPR - Got the database
 IITD Multispectral (IMP) - Need to apply
@@ -13,20 +11,8 @@ CROSS EYED dataset - Applied already
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 Hallucinating the Full Face from the Periocular Region via Dimensionally Weighted K-SVD
-Periocular Recognition Using Unsupervised Convolutional RBM Feature Learning
-Accurate Periocular Recognition under Less Constrained Environment Using Semantics-Assisted Convolutional Neural Network.
+
 
 
 
@@ -58,21 +44,6 @@ would be to process further face databases for which these labels are available 
 UBIPR: This database contains 5,126 left and 5,126 right periocular images from 344 subjects, and simulates less constrained periocular acquisition environment under visible spectrum. Noticeable amount of images from this dataset present occlusion, off-angle or illumination variation. For the experiments, only left periocular images are used. We employed the same training set of 3,359 images as used in [9] for model learning. The remaining 1,767 left images are used for test phase for performance evaluation. This database
 is used for open-world experiments and therefore no subjects are overlapping between the training and test sets. [Improving Periocular Recognition by Explicit Attention to Critical Regions in Deep Neural Network]
 
-
-
-
-
-Preprocessing
-
-UBIPr - 10199 images There were a few images that were not clear and had issues, so we removed those images and we got only 10138
-Total Images are 10138: Left eye and right eye folders are separated for each subject. However, there was an overlap of 3 images, which means left eye folder of a subject had a right eye image or vice versa. SO such images hav been discarded. Therefore total number of images is down to 10,135 now. The total number of class folders are 504, out of which, Number of Male folders are 362, Female folders are 142 
-Number of left eye and right eyes are equal to 252 each. Based on having equal number of left and right eye, we are assuming number of subjects as 252, therefore males are 181, and females are 71
-Images have been taken at 5 distances, so the image sizes (h x w) are (401 x 501),(441 x 561), (501 x 651),(651 x 801), (801 x 1001), There are 3 images for each image size. Therefore each folder has 15 images, if one session. Some of the images have 2 sessions, which means upto 30 images in each folder.
-Next we consolidated the left and right eye folder into one folder for that particular subject. This means we now have 252 subject folders. Out of 252, 89 have more than 30 images, which  implies 89 subjects has 2 sessions. Total number of subjects with more than 30 images are 89 and they are ['subj_1', 'subj_100', 'subj_101', 'subj_103', 'subj_113', 'subj_114', 'subj_117', 'subj_118', 'subj_119', 'subj_120', 'subj_122', 'subj_123', 'subj_124', 'subj_127', 'subj_128', 'subj_129', 'subj_130', 'subj_131', 'subj_149', 'subj_155', 'subj_157', 'subj_159', 'subj_160', 'subj_162', 'subj_163', 'subj_165', 'subj_166', 'subj_168', 'subj_172', 'subj_179', 'subj_182', 'subj_183', 'subj_186', 'subj_189', 'subj_190', 'subj_191', 'subj_194', 'subj_195', 'subj_196', 'subj_20', 'subj_201', 'subj_211', 'subj_213', 'subj_217', 'subj_22', 'subj_221', 'subj_222', 'subj_223', 'subj_225', 'subj_226', 'subj_23', 'subj_233', 'subj_234', 'subj_24', 'subj_25', 'subj_251', 'subj_252', 'subj_254', 'subj_255', 'subj_31', 'subj_37', 'subj_4', 'subj_43', 'subj_45', 'subj_46', 'subj_47', 'subj_48', 'subj_5', 'subj_50', 'subj_51', 'subj_52', 'subj_53', 'subj_54', 'subj_55', 'subj_56', 'subj_61', 'subj_63', 'subj_64', 'subj_74', 'subj_75', 'subj_76', 'subj_83', 'subj_86', 'subj_88', 'subj_89', 'subj_92', 'subj_93', 'subj_94', 'subj_95']
- Next, we have separated the images for male and female and different folders (Male_Female_Folders_Images). There are 181 males with total images of 7266 male images and 2869 female images. 
- After this we chose images with width of 561 and 651 and moved it to a different folder for both and women (Male_Female_Training_Folders_Images). We have a total of 2912 male images now and 1146 female images. 
- 
- 
  
  
  
@@ -95,4 +66,49 @@ Next we consolidated the left and right eye folder into one folder for that part
  3. CROSS-EYed: Gender information available upon request
  a. Gender Classification from Multispectral Periocular Images
  b. Sex-Prediction from Periocular Images across Multiple Sensors and Spectra
+ 
+ 
+ Preprocessing
+
+UBIPr - 10199 images There were a few images that were not clear and had issues, so we removed those images and we got only 10138
+Total Images are 10138: Left eye and right eye folders are separated for each subject. However, there was an overlap of 3 images, which means left eye folder of a subject had a right eye image or vice versa. SO such images hav been discarded. Therefore total number of images is down to 10,135 now. The total number of class folders are 504, out of which, Number of Male folders are 362, Female folders are 142 
+Number of left eye and right eyes are equal to 252 each. Based on having equal number of left and right eye, we are assuming number of subjects as 252, therefore males are 181, and females are 71
+Images have been taken at 5 distances, so the image sizes (h x w) are (401 x 501),(441 x 561), (501 x 651),(651 x 801), (801 x 1001), There are 3 images for each image size. Therefore each folder has 15 images, if one session. Some of the images have 2 sessions, which means upto 30 images in each folder.
+
+Next we consolidated the left and right eye folder into one folder for that particular subject. This means we now have 252 subject folders. Out of 252, 89 have more than 30 images, which  implies 89 subjects has 2 sessions. Total number of subjects with more than 30 images are 89 and they are ['subj_1', 'subj_100', 'subj_101', 'subj_103', 'subj_113', 'subj_114', 'subj_117', 'subj_118', 'subj_119', 'subj_120', 'subj_122', 'subj_123', 'subj_124', 'subj_127', 'subj_128', 'subj_129', 'subj_130', 'subj_131', 'subj_149', 'subj_155', 'subj_157', 'subj_159', 'subj_160', 'subj_162', 'subj_163', 'subj_165', 'subj_166', 'subj_168', 'subj_172', 'subj_179', 'subj_182', 'subj_183', 'subj_186', 'subj_189', 'subj_190', 'subj_191', 'subj_194', 'subj_195', 'subj_196', 'subj_20', 'subj_201', 'subj_211', 'subj_213', 'subj_217', 'subj_22', 'subj_221', 'subj_222', 'subj_223', 'subj_225', 'subj_226', 'subj_23', 'subj_233', 'subj_234', 'subj_24', 'subj_25', 'subj_251', 'subj_252', 'subj_254', 'subj_255', 'subj_31', 'subj_37', 'subj_4', 'subj_43', 'subj_45', 'subj_46', 'subj_47', 'subj_48', 'subj_5', 'subj_50', 'subj_51', 'subj_52', 'subj_53', 'subj_54', 'subj_55', 'subj_56', 'subj_61', 'subj_63', 'subj_64', 'subj_74', 'subj_75', 'subj_76', 'subj_83', 'subj_86', 'subj_88', 'subj_89', 'subj_92', 'subj_93', 'subj_94', 'subj_95']
+ Next, we have separated the images for male and female and different folders (Male_Female_Folders_Images). There are 181 males with total images of 7266 male images and 2869 female images. 
+ After this we chose images with width of 561 and 651 and moved it to a different folder for both and women (Male_Female_Training_Folders_Images). We have a total of 2912 male images now and 1146 female images. 
+ 
+ After speaking with Dr. Nasrabadi, we decided to train with only the left eye as per the State-of-the-art. SO, we had to create left and right folder images separately and not consolidate them. ANother thing we discussed was to split the subjects with multiple sessions into two subjects where first session corresponds to one subject and second session will be considered as a different subject. Therefore, we first split the class folders into left and right images using the function "consolidate_left_right". We split the Class_Folders into Class_Folder_Left_Images and Class_Folders_Right_Images. Next we split the subjects with more than one session images or more than 15 images into two different subjects. For this we used the function "split_classes_more_images" and we split the left and right image folders into Class_Folder_Left_Images_Split and Class_Folder_Right_Images_Split. Initially after splitting into multiple subjects, the Right folder split had an extra folder, subj_217_S2, where subj_217_S2 had only one session 2 image,  We had 340 right and 339 left folders. However I just moved back that single image to subj_217 folder and deleted the subj_217_S2 folder. After this we got 339 subject folders each for both left and right eyes. 
+ Dr. Nasrabadi also wanted me to use all the image sizes and resize all the image sizes to h x w of 401 x 501. This will be done on the fly in Pytorch.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
  

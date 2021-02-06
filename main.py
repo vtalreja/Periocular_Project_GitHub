@@ -45,7 +45,7 @@ target_lr = 0.001
 num_workers = 4
 
 # Number of epochs to train for
-num_epochs = 50
+num_epochs = 100
 
 ngpu = 2
 

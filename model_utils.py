@@ -170,6 +170,7 @@ def train_model(model, dataloaders, criterion, optimizer, lr, target_lr, num_epo
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
+                best_epoch = epoch
                 best_model_wts = copy.deepcopy(model.state_dict())
             # if phase == 'val':
             #     val_acc_history.append(epoch_acc)
@@ -183,7 +184,7 @@ def train_model(model, dataloaders, criterion, optimizer, lr, target_lr, num_epo
     print('Best val Acc: {:4f}'.format(best_acc))
 
     # load best model weights
-    torch.save(best_model_wts, os.path.join(results_dir, 'epoch_' + str(epoch) + '.pth'))
+    torch.save(best_model_wts, os.path.join(results_dir, 'epoch_' + str(best_epoch) + '.pth'))
     model.load_state_dict(best_model_wts)
     return model, train_metrics,val_metrics
 

@@ -11,3 +11,7 @@ import matplotlib.pyplot as plt
 import time
 import os
 import copy
+
+https://github.com/davidRetana/thumbs_jetbot/blob/master/train_model_thumbs.ipynb
+
+https://towardsdatascience.com/a-practical-example-in-transfer-learning-with-pytorch-846bb835f2db

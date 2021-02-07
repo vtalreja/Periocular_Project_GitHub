@@ -13,6 +13,8 @@ import time
 import os
 import copy
 from torchsummary import summary
+import matplotlib.pyplot as plt
+
 
 
 from dataset_utils import *
@@ -25,11 +27,7 @@ from model import *
 data_dir = "/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders_Left_Images_Split"
 
 # Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
-model_name = "vgg"
-
-results_dir = model_name+'_results'
-if not (os.path.exists(results_dir)):
-    os.mkdir(results_dir)
+model_name = "squeezenet"
 
 
 # Number of classes in the dataset
@@ -45,13 +43,17 @@ target_lr = 0.001
 num_workers = 4
 
 # Number of epochs to train for
-num_epochs = 100
+num_epochs = 80
 
 ngpu = 2
 
 split_list = ['train','val']
 
 device = torch.device("cuda:0" if (torch.cuda.is_available() and ngpu > 0) else "cpu")
+
+results_dir = os.path.join('Classification_Results',model_name+'_results_' + str(num_epochs)+ '_epochs')
+if not (os.path.exists(results_dir)):
+    os.mkdir(results_dir)
 
 dataloaders, dataset_sizes, class_names = load_data(data_dir, split_list, batch_size, num_workers)
 
@@ -64,7 +66,15 @@ out = torchvision.utils.make_grid(inputs)
 
 imshow(out, title=[class_names[x] for x in classes])
 
-model = classification_model(model_name,num_classes=len(class_names),use_pretrained=True)
+if model_name == "vgg":
+    """ VGG16_bn
+    """
+    model = classification_model(model_name,num_classes=len(class_names),use_pretrained=True)
+elif model_name in ["resnet","squeezenet"]:
+    """ Resnet50 or squeezenet1_0
+    """
+    model = initialize_model(model_name,num_classes=len(class_names),use_pretrained=True)
+
 if (device.type == 'cuda') and (ngpu > 1):
     model = nn.DataParallel(model, list(range(ngpu)))
 model.to(device)
@@ -72,8 +82,13 @@ model.to(device)
 
 # BCE loss and Adam optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=lr)
+# optimizer = optim.Adam(model.parameters(), lr=lr)
 
+# Observe that all parameters are being optimized
+optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+# Decay LR by a factor of 0.1 every 7 epochs
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 
 # Print the model
 print(model)
@@ -84,3 +99,6 @@ model,train_metrics,val_metrics = train_model(model=model, dataloaders=dataloade
 visualize_model(model, device,dataloaders,class_names,num_images=6)
 print(train_metrics)
 print(val_metrics)
+
+for metric in ['loss','acc']:
+    plot_metrics(train_metrics[metric],val_metrics[metric],results_dir=results_dir,metric=metric)

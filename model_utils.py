@@ -17,98 +17,20 @@ from dataset_utils import *
 from utils import *
 
 
-
-def initialize_model(model_name, num_classes, use_pretrained=True):
-    # Initialize these variables which will be set in this if statement. Each of these
-    #   variables is model specific.
-    model_ft = None
-    input_size = 0
-
-    if model_name == "resnet":
-        """ Resnet18
-        """
-        model_ft = models.resnet18(pretrained=use_pretrained)
-        for param in model_ft.parameters():
-            param.requires_grad = False
-        num_ftrs = model_ft.fc.in_features
-        model_ft.fc = nn.Linear(num_ftrs, num_classes)
-        input_size = 224
-
-    elif model_name == "alexnet":
-        """ Alexnet
-        """
-        model_ft = models.alexnet(pretrained=use_pretrained)
-        for param in model_ft.parameters():
-            param.requires_grad = False
-        num_ftrs = model_ft.classifier[6].in_features
-        model_ft.classifier[6] = nn.Linear(num_ftrs, num_classes)
-        input_size = 224
-
-
-    elif model_name == "vgg":
-        """ VGG11_bn
-        """
-        model_ft = models.vgg11_bn(pretrained=use_pretrained)
-        for param in model_ft.parameters():
-            param.requires_grad = False
-        num_ftrs = model_ft.classifier[6].in_features
-        model_ft.classifier[6] = nn.Linear(num_ftrs, num_classes)
-        input_size = 224
-
-    elif model_name == "squeezenet":
-        """ Squeezenet
-        """
-        model_ft = models.squeezenet1_0(pretrained=use_pretrained)
-        for param in model_ft.parameters():
-            param.requires_grad = False
-        model_ft.classifier[1] = nn.Conv2d(512, num_classes, kernel_size=(1, 1), stride=(1, 1))
-        model_ft.num_classes = num_classes
-        input_size = 224
-
-    elif model_name == "densenet":
-        """ Densenet
-        """
-        model_ft = models.densenet121(pretrained=use_pretrained)
-        for param in model_ft.parameters():
-            param.requires_grad = False
-        num_ftrs = model_ft.classifier.in_features
-        model_ft.classifier = nn.Linear(num_ftrs, num_classes)
-        input_size = 224
-
-    elif model_name == "inception":
-        """ Inception v3
-        Be careful, expects (299,299) sized images and has auxiliary output
-        """
-        model_ft = models.inception_v3(pretrained=use_pretrained)
-        for param in model_ft.parameters():
-            param.requires_grad = False
-        # Handle the auxilary net
-        num_ftrs = model_ft.AuxLogits.fc.in_features
-        model_ft.AuxLogits.fc = nn.Linear(num_ftrs, num_classes)
-        # Handle the primary net
-        num_ftrs = model_ft.fc.in_features
-        model_ft.fc = nn.Linear(num_ftrs, num_classes)
-        input_size = 299
-
-    else:
-        print("Invalid model name, exiting...")
-        exit()
-
-    return model_ft, input_size
-
-
-def train_model(model, dataloaders, criterion, optimizer, lr, target_lr, num_epochs, device, results_dir,is_inception=False):
+def train_model(model, dataloaders, criterion, optimizer, lr, target_lr, num_epochs, device, results_dir,
+                is_inception=False):
     since = time.time()
 
     val_acc_history = []
 
     best_model_wts = copy.deepcopy(model.state_dict())
+    updated_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
 
-    train_metrics = {'loss':[],'acc':[]}
-    val_metrics = {'loss':[],'acc':[]}
-    for epoch in range(num_epochs):
-        print('Epoch {}/{}'.format(epoch, num_epochs - 1))
+    train_metrics = {'loss': [], 'acc': []}
+    val_metrics = {'loss': [], 'acc': []}
+    for epoch in range(1, num_epochs + 1):
+        print('Epoch {}/{}'.format(epoch, num_epochs))
         print('-' * 10)
 
         # Each epoch has a training and validation phase
@@ -172,22 +94,25 @@ def train_model(model, dataloaders, criterion, optimizer, lr, target_lr, num_epo
                 best_acc = epoch_acc
                 best_epoch = epoch
                 best_model_wts = copy.deepcopy(model.state_dict())
-            # if phase == 'val':
-            #     val_acc_history.append(epoch_acc)
+        if (epoch % 5 == 0):
+            updated_model_wts = copy.deepcopy(model.state_dict())
+            torch.save(updated_model_wts, os.path.join(results_dir, 'epoch_' + str(epoch) + '.pth'))
 
-        adjust_learning_rate(optimizer, lr, target_lr, epoch, None, num_epochs)
+        # adjust_learning_rate(optimizer, lr, target_lr, epoch, None, num_epochs)
 
         print()
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
-    print('Best val Acc: {:4f}'.format(best_acc))
+    print('Best val Acc: {:4f} , which is for epoch: {}'.format(best_acc, best_epoch))
+
+    if not os.path.exists(os.path.join(results_dir, 'epoch_' + str(
+            best_epoch) + '.pth')):  # Save the best model only if it has not been saved previously in the regular updates
+        torch.save(best_model_wts, os.path.join(results_dir, 'epoch_' + str(best_epoch) + '.pth'))
 
     # load best model weights
-    torch.save(best_model_wts, os.path.join(results_dir, 'epoch_' + str(best_epoch) + '.pth'))
     model.load_state_dict(best_model_wts)
-    return model, train_metrics,val_metrics
-
+    return model, train_metrics, val_metrics
 
 
 def visualize_model(model, device, dataloaders, class_names, num_images=6):

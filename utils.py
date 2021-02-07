@@ -35,3 +35,14 @@ def imshow(inp, title=None):
     if title is not None:
         plt.title(title)
     plt.pause(0.001)  # pause a bit so that plots are updated
+
+def plot_metrics (train_metric,val_metric,results_dir,metric):
+    plt.figure(figsize=(10, 5))
+    plt.title("Training and Validation " + metric)
+    plt.plot(train_metric, label="Training")
+    plt.plot(val_metric, label="Val")
+    plt.xlabel("Epochs")
+    plt.ylabel(metric)
+    plt.legend()
+    plt.savefig(os.path.join (results_dir,metric +'.png'))
+

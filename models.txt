@@ -1,0 +1,12 @@
+Vgg_16_bn: Used pre-trained model and only trained the classifier. In self.classifier included own linear layers of size (512*12*15,2048),(2048,1024),(1024,339). Did not use adaptive avg pooling
+Trained and tested this model for 100 epochs first. First trained this model for 100 epochs. the results were being saved only for the best epoch. The best val_acc was 98.7 and the bets epoch was 93.
+The result wre saved in the folder "vgg_results". Felt that we could be overfitting when looked at the loss and accracy plot. So decided to train a little less till 70 epochs. Next trained the model
+for 70 epochs. Unfortunately did not save the model for every 5 epochs. Again the best Val acc was 95.1 and the best epoch was 68. The result wre saved in the folder "vgg_results_70epchs".
+But still feel that we should train it little more less. Will try to train it till 50 epochs.
+
+ResNet18 and ResNet 50: Used pre-trained, only trained mode.fc. Tried including multiple linear layers in miodel.fc similar to vgg_16_bn above. Tried (2048,1024),(1024,512),(512,339), but did not help the training was really slow even after 40 epochs the val acc was only 2%.
+Tried using pretrained model and only changing the number of classes in the linear layer as shown in "https://pytorch.org/tutorials/beginner/finetuning_torchvision_models_tutorial.html". However, the network was learning but very slow learning, we could reach only 30% after 60 epoochs.
+So, deleted all these results folders.
+
+Squeezenet_1_0: Training squeezenet1_0 by just changing the classification layer number of classes to 339 as in the above link from resnet. Training it for 80 epochs.
+The result wre saved in the folder "Classification_Results/squeezenet_results_80_epochs"

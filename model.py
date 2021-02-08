@@ -47,24 +47,17 @@ def initialize_model(model_name, num_classes, use_pretrained=True):
         for param in model_ft.parameters():
             param.requires_grad = False
         num_ftrs = model_ft.fc.in_features
-        model_ft.fc = nn.Sequential(
-            nn.Linear(num_ftrs, 1024),
-            nn.ReLU(True),
-            nn.Dropout(),
-            nn.Linear(1024, 512),
-            nn.ReLU(True),
-            nn.Dropout(),
-            nn.Linear(512, num_classes),
-        )
-        model_ft.fc = nn.Sequential(
-                nn.Linear(num_ftrs, 1024),
-                nn.ReLU(True),
-                nn.Dropout(),
-                nn.Linear(1024, 512),
-                nn.ReLU(True),
-                nn.Dropout(),
-                nn.Linear(512, num_classes),
-            )
+        # model_ft.fc = nn.Sequential(
+        #     nn.Linear(num_ftrs, 1024),
+        #     nn.ReLU(True),
+        #     nn.Dropout(),
+        #     nn.Linear(1024, 512),
+        #     nn.ReLU(True),
+        #     nn.Dropout(),
+        #     nn.Linear(512, num_classes),
+        # )
+        model_ft.fc = nn.Linear(num_ftrs, num_classes)
+
         input_size = 224
 
     elif model_name == "alexnet":

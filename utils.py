@@ -46,3 +46,27 @@ def plot_metrics (train_metric,val_metric,results_dir,metric):
     plt.legend()
     plt.savefig(os.path.join (results_dir,metric +'.png'))
 
+def write_results_csv(text_file, data):
+    if text_file != None:
+        with open(text_file, 'a') as fp:
+            np.savetxt(fp, np.asarray(data), delimiter=',')
+
+
+def load_ckp(checkpoint_fpath, model, optimizer):
+    checkpoint = torch.load(checkpoint_fpath)
+    model.load_state_dict(checkpoint['state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+    start_epoch = checkpoint['epoch'] + 1
+    train_metrics = checkpoint['train_metrics']
+    val_metrics = checkpoint['val_metrics']
+    return model, optimizer, start_epoch,train_metrics,val_metrics
+
+def save_ckp(save_dir,epoch,state_dict,optimizer,train_metrics,val_metrics):
+    checkpoint = {
+        'epoch': epoch,
+        'state_dict': state_dict,
+        'optimizer': optimizer,
+        'val_metrics':val_metrics,
+        'train_metrics':train_metrics
+    }
+    torch.save(checkpoint,os.path.join(save_dir,'epoch_' + str(epoch) + '.pt'))

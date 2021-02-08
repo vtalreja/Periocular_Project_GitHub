@@ -17,7 +17,8 @@ from dataset_utils import *
 from utils import *
 
 
-def train_model(model, dataloaders, criterion, optimizer, lr, target_lr, num_epochs, device, results_dir,
+def train_model(start_epoch, model, dataloaders, criterion, optimizer, lr, target_lr, num_epochs, device, results_dir,
+                train_metrics, val_metrics,
                 is_inception=False):
     since = time.time()
 
@@ -27,9 +28,9 @@ def train_model(model, dataloaders, criterion, optimizer, lr, target_lr, num_epo
     updated_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
 
-    train_metrics = {'loss': [], 'acc': []}
-    val_metrics = {'loss': [], 'acc': []}
-    for epoch in range(1, num_epochs + 1):
+    # best_train_metrics = {'loss': [], 'acc': []}
+    # best_val_metrics = {'loss': [], 'acc': []}
+    for epoch in range(start_epoch, num_epochs + 1):
         print('Epoch {}/{}'.format(epoch, num_epochs))
         print('-' * 10)
 
@@ -94,9 +95,16 @@ def train_model(model, dataloaders, criterion, optimizer, lr, target_lr, num_epo
                 best_acc = epoch_acc
                 best_epoch = epoch
                 best_model_wts = copy.deepcopy(model.state_dict())
+                best_optimizer_dict = copy.deepcopy(optimizer.state_dict())
+                best_train_metrics = {x: train_metrics[x][:best_epoch] for x in ['loss','acc']}
+                best_val_metrics = {x: val_metrics[x][:best_epoch]for x in ['loss','acc']}
+
+
         if (epoch % 5 == 0):
             updated_model_wts = copy.deepcopy(model.state_dict())
-            torch.save(updated_model_wts, os.path.join(results_dir, 'epoch_' + str(epoch) + '.pth'))
+            updated_optimizer_dict = copy.deepcopy(optimizer.state_dict())
+            save_ckp(save_dir=results_dir, epoch=epoch, state_dict=updated_model_wts, optimizer=updated_optimizer_dict,train_metrics=train_metrics,val_metrics=val_metrics)
+            # torch.save(updated_model_wts, os.path.join(results_dir, 'epoch_' + str(epoch) + '.pth'))
 
         # adjust_learning_rate(optimizer, lr, target_lr, epoch, None, num_epochs)
 
@@ -107,8 +115,9 @@ def train_model(model, dataloaders, criterion, optimizer, lr, target_lr, num_epo
     print('Best val Acc: {:4f} , which is for epoch: {}'.format(best_acc, best_epoch))
 
     if not os.path.exists(os.path.join(results_dir, 'epoch_' + str(
-            best_epoch) + '.pth')):  # Save the best model only if it has not been saved previously in the regular updates
-        torch.save(best_model_wts, os.path.join(results_dir, 'epoch_' + str(best_epoch) + '.pth'))
+            best_epoch) + '.pt')):  # Save the best model only if it has not been saved previously in the regular updates
+        save_ckp(save_dir=results_dir, epoch=best_epoch, state_dict=best_model_wts, optimizer=best_optimizer_dict,train_metrics=best_train_metrics,val_metrics=best_val_metrics)
+        # torch.save(best_model_wts, os.path.join(results_dir, 'epoch_' + str(best_epoch) + '.pth'))
 
     # load best model weights
     model.load_state_dict(best_model_wts)

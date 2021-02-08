@@ -9,4 +9,6 @@ Tried using pretrained model and only changing the number of classes in the line
 So, deleted all these results folders.
 
 Squeezenet_1_0: Training squeezenet1_0 by just changing the classification layer number of classes to 339 as in the above link from resnet. Training it for 80 epochs.
-The result wre saved in the folder "Classification_Results/squeezenet_results_80_epochs"
+The result wre saved in the folder "Classification_Results/squeezenet_results_80_epochs". Best val_acc was 74.11 for 80th epoch.
+
+Again trained abover squeezenet for 100 epochs. Best Value_acc  was 81.1 for 98th epoch. The result wre saved in the folder "Classification_Results/squeezenet_results_100_epochs"

@@ -15,12 +15,9 @@ import copy
 from torchsummary import summary
 import matplotlib.pyplot as plt
 
-
-
 from dataset_utils import *
 from model_utils import *
 from model import *
-
 
 # Top level data directory. Here we assume the format of the directory conforms
 #   to the ImageFolder structure
@@ -28,7 +25,6 @@ data_dir = "/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folder
 
 # Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
 model_name = "squeezenet"
-
 
 # Number of classes in the dataset
 num_classes = 339
@@ -43,20 +39,26 @@ target_lr = 0.001
 num_workers = 4
 
 # Number of epochs to train for
-num_epochs = 80
+num_epochs = 120
 
 ngpu = 2
 
-split_list = ['train','val']
+split_list = ['train', 'val']
+
+restart_training = False
+
+ckpt_fname = None
 
 device = torch.device("cuda:0" if (torch.cuda.is_available() and ngpu > 0) else "cpu")
 
-results_dir = os.path.join('Classification_Results',model_name+'_results_' + str(num_epochs)+ '_epochs')
+results_dir = os.path.join('Classification_Results', model_name + '_results_' + str(120) + '_epochs')
 if not (os.path.exists(results_dir)):
     os.mkdir(results_dir)
 
-dataloaders, dataset_sizes, class_names = load_data(data_dir, split_list, batch_size, num_workers)
+train_results_txt = os.path.join(results_dir, 'results_train_metrics.txt')
+val_results_txt = os.path.join(results_dir, 'results_val_metrics.txt')
 
+dataloaders, dataset_sizes, class_names = load_data(data_dir, split_list, batch_size, num_workers)
 
 # Get a batch of training data
 inputs, classes = next(iter(dataloaders['train']))
@@ -69,16 +71,11 @@ imshow(out, title=[class_names[x] for x in classes])
 if model_name == "vgg":
     """ VGG16_bn
     """
-    model = classification_model(model_name,num_classes=len(class_names),use_pretrained=True)
-elif model_name in ["resnet","squeezenet"]:
+    model = classification_model(model_name, num_classes=len(class_names), use_pretrained=True)
+elif model_name in ["resnet", "squeezenet"]:
     """ Resnet50 or squeezenet1_0
     """
-    model = initialize_model(model_name,num_classes=len(class_names),use_pretrained=True)
-
-if (device.type == 'cuda') and (ngpu > 1):
-    model = nn.DataParallel(model, list(range(ngpu)))
-model.to(device)
-# summary(model, (3, 401, 501))
+    model = initialize_model(model_name, num_classes=len(class_names), use_pretrained=True)
 
 # BCE loss and Adam optimizer
 criterion = nn.CrossEntropyLoss()
@@ -90,15 +87,44 @@ optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 # Decay LR by a factor of 0.1 every 7 epochs
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 
+start_epoch = 1
+train_metrics = {'loss': [], 'acc': []}
+val_metrics = {'loss': [], 'acc': []}
+
+if (device.type == 'cuda') and (ngpu > 1):
+    model = nn.DataParallel(model, list(range(ngpu)))
+model.to(device)
+
+if (restart_training):
+    if (ckpt_fname == None):
+        list_of_ckpts = glob.glob(os.path.join(results_dir, '*.pt'))
+        latest_ckpt = None if list_of_ckpts == [] else max(list_of_ckpts, key=os.path.getctime)
+    else:
+        latest_ckpt = os.path.join(results_dir, ckpt_fname)
+    assert latest_ckpt != None, ' latest_ckpt cannot be None as None cannot be loaded in the model'
+    model, optimizer, start_epoch, train_metrics, val_metrics = load_ckp(latest_ckpt, model, optimizer)
+    print("Last epoch on saved checkpoint is {}. Training will start from {} for more {} iterations".format(
+        start_epoch - 1, start_epoch, num_epochs - start_epoch - 1))
+
+# summary(model, (3, 401, 501))
+
+
 # Print the model
 print(model)
 
 # Training Loop
-model,train_metrics,val_metrics = train_model(model=model, dataloaders=dataloaders, criterion=criterion, optimizer=optimizer, lr=lr,target_lr=target_lr,num_epochs=num_epochs,device=device, results_dir=results_dir,is_inception=False)
+model, train_metrics, val_metrics = train_model(start_epoch=start_epoch, model=model, dataloaders=dataloaders,
+                                                criterion=criterion, optimizer=optimizer, lr=lr, target_lr=target_lr,
+                                                num_epochs=num_epochs, device=device, results_dir=results_dir,
+                                                train_metrics=train_metrics, val_metrics=val_metrics,
+                                                is_inception=False)
 
-visualize_model(model, device,dataloaders,class_names,num_images=6)
+visualize_model(model, device, dataloaders, class_names, num_images=6)
 print(train_metrics)
 print(val_metrics)
 
-for metric in ['loss','acc']:
-    plot_metrics(train_metrics[metric],val_metrics[metric],results_dir=results_dir,metric=metric)
+for metric in ['loss', 'acc']:
+    plot_metrics(train_metrics[metric], val_metrics[metric], results_dir=results_dir, metric=metric)
+
+# write_results_csv(train_results_txt,train_metrics)
+# write_results_csv(val_results_txt,val_metrics)

@@ -52,21 +52,23 @@ def write_results_csv(text_file, data):
             np.savetxt(fp, np.asarray(data), delimiter=',')
 
 
-def load_ckp(checkpoint_fpath, model, optimizer):
+def load_ckp(checkpoint_fpath, model, optimizer,scheduler):
     checkpoint = torch.load(checkpoint_fpath)
     model.load_state_dict(checkpoint['state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     start_epoch = checkpoint['epoch'] + 1
     train_metrics = checkpoint['train_metrics']
     val_metrics = checkpoint['val_metrics']
-    return model, optimizer, start_epoch,train_metrics,val_metrics
+    scheduler.load_state_dict(checkpoint['scheduler'])
+    return model, optimizer, start_epoch,train_metrics,val_metrics,scheduler
 
-def save_ckp(save_dir,epoch,state_dict,optimizer,train_metrics,val_metrics):
+def save_ckp(save_dir,epoch,state_dict,optimizer,train_metrics,val_metrics,scheduler):
     checkpoint = {
         'epoch': epoch,
         'state_dict': state_dict,
         'optimizer': optimizer,
         'val_metrics':val_metrics,
-        'train_metrics':train_metrics
+        'train_metrics':train_metrics,
+        'scheduler': scheduler
     }
     torch.save(checkpoint,os.path.join(save_dir,'epoch_' + str(epoch) + '.pt'))

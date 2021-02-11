@@ -17,7 +17,7 @@ from dataset_utils import *
 from utils import *
 
 
-def train_model(start_epoch, model, dataloaders, criterion, optimizer, lr, target_lr, num_epochs, device, results_dir,
+def train_model(start_epoch, model, dataloaders, criterion, optimizer, scheduler, num_epochs, device, results_dir,
                 train_metrics, val_metrics,
                 is_inception=False):
     since = time.time()
@@ -79,6 +79,8 @@ def train_model(start_epoch, model, dataloaders, criterion, optimizer, lr, targe
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
+            if phase == 'train':
+                scheduler.step()
 
             epoch_loss = running_loss / len(dataloaders[phase].dataset)
             epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
@@ -96,14 +98,16 @@ def train_model(start_epoch, model, dataloaders, criterion, optimizer, lr, targe
                 best_epoch = epoch
                 best_model_wts = copy.deepcopy(model.state_dict())
                 best_optimizer_dict = copy.deepcopy(optimizer.state_dict())
-                best_train_metrics = {x: train_metrics[x][:best_epoch] for x in ['loss','acc']}
-                best_val_metrics = {x: val_metrics[x][:best_epoch]for x in ['loss','acc']}
-
+                best_scheduler = copy.deepcopy(scheduler.state_dict())
+                best_train_metrics = {x: train_metrics[x][:best_epoch] for x in ['loss', 'acc']}
+                best_val_metrics = {x: val_metrics[x][:best_epoch] for x in ['loss', 'acc']}
 
         if (epoch % 5 == 0):
             updated_model_wts = copy.deepcopy(model.state_dict())
             updated_optimizer_dict = copy.deepcopy(optimizer.state_dict())
-            save_ckp(save_dir=results_dir, epoch=epoch, state_dict=updated_model_wts, optimizer=updated_optimizer_dict,train_metrics=train_metrics,val_metrics=val_metrics)
+            updated_scheduler = copy.deepcopy(scheduler.state_dict())
+            save_ckp(save_dir=results_dir, epoch=epoch, state_dict=updated_model_wts, optimizer=updated_optimizer_dict,
+                     train_metrics=train_metrics, val_metrics=val_metrics, scheduler = updated_scheduler)
             # torch.save(updated_model_wts, os.path.join(results_dir, 'epoch_' + str(epoch) + '.pth'))
 
         # adjust_learning_rate(optimizer, lr, target_lr, epoch, None, num_epochs)
@@ -116,7 +120,8 @@ def train_model(start_epoch, model, dataloaders, criterion, optimizer, lr, targe
 
     if not os.path.exists(os.path.join(results_dir, 'epoch_' + str(
             best_epoch) + '.pt')):  # Save the best model only if it has not been saved previously in the regular updates
-        save_ckp(save_dir=results_dir, epoch=best_epoch, state_dict=best_model_wts, optimizer=best_optimizer_dict,train_metrics=best_train_metrics,val_metrics=best_val_metrics)
+        save_ckp(save_dir=results_dir, epoch=best_epoch, state_dict=best_model_wts, optimizer=best_optimizer_dict,
+                 train_metrics=best_train_metrics, val_metrics=best_val_metrics, scheduler = best_scheduler)
         # torch.save(best_model_wts, os.path.join(results_dir, 'epoch_' + str(best_epoch) + '.pth'))
 
     # load best model weights

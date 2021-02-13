@@ -3,6 +3,7 @@ import os
 import glob
 import shutil
 from skimage.io import imread, imsave
+from utils import *
 
 
 def create_class_folders(Image_folder, Destination_folder):
@@ -99,7 +100,7 @@ def consolidate_left_right(Image_dir, Destination_folder, Only_Images=False, eye
             raise ValueError('flag eye can take only left, right or both value')
 
 
-def count_classes_more_images(Image_dir,count):
+def count_classes_more_images(Image_dir, count):
     '''Find the number of subjects who have more than 'count' images'''
     class_names = os.listdir(Image_dir)
     class_names = sorted(class_names)
@@ -113,11 +114,14 @@ def count_classes_more_images(Image_dir,count):
         if len(li_files) == 0:
             li_empty_folders.append(class_name)
     print(
-        'Total number of subjects with more than {} images are {} and they are {}'.format(count,len(li_classes), li_classes))
+        'Total number of subjects with more than {} images are {} and they are {}'.format(count, len(li_classes),
+                                                                                          li_classes))
     print(
         'Total number of subjects with 0 images are {} and they are {}'.format(len(li_empty_folders), li_empty_folders))
 
-def split_classes_more_images(Image_dir,count,Only_Images):
+
+def split_classes_more_images(Image_dir, count, Only_Images):
+    '''Function to split the subject folders with more than count images into a separate folder and consider it a new subject'''
     class_names = os.listdir(Image_dir)
     class_names = sorted(class_names)
     li_classes = []
@@ -135,22 +139,32 @@ def split_classes_more_images(Image_dir,count,Only_Images):
                 else:
                     base_name = file_name
                 if 'S2' in base_name:
-                    if not os.path.exists (class_folder+'_S2'):
-                        os.mkdir(class_folder+'_S2')
-                    shutil.move(os.path.join(class_folder,file_name),class_folder+'_S2')
+                    if not os.path.exists(class_folder + '_S2'):
+                        os.mkdir(class_folder + '_S2')
+                    shutil.move(os.path.join(class_folder, file_name), class_folder + '_S2')
 
 
+def copy_male_female_folder(gender, Destination_folder, class_name, gender_list, file_name, Only_Image):
+    image_name = file_name.split('.')[0]
+    gender_folder = os.path.join(Destination_folder, gender)
+    gender_class_folder = os.path.join(gender_folder, class_name)
+    if not os.path.exists(gender_folder):
+        os.mkdir(gender_folder)
+    if class_name not in gender_list:
+        # gender_class_folder = os.path.join(gender_folder, class_name)
+        os.mkdir(gender_class_folder)
+        gender_list.append(class_name)
+    shutil.copy(image_name + '.jpg', gender_class_folder)
+    if not Only_Image:
+        shutil.copy(file_name, gender_class_folder)
+    return gender_list
 
 
-
-def split_male_female(Image_dir, Destination_folder):
-    '''Split the Consolidated folders into male and Female folders'''
+def split_male_female(Image_dir, Destination_folder, Only_Image):
+    '''Split the folders in Image_dir into male and Female folders'''
     class_names = os.listdir(Image_dir)
     class_names = sorted(class_names)
-    os.mkdir(os.path.join(Destination_folder, 'Male'))
-    os.mkdir(os.path.join(Destination_folder, 'Female'))
-    male_folder = os.path.join(Destination_folder, 'Male')
-    female_folder = os.path.join(Destination_folder, 'Female')
+
     male_list = []
     female_list = []
     for class_name in class_names:
@@ -163,19 +177,46 @@ def split_male_female(Image_dir, Destination_folder):
             file1 = open(file_name, 'r')
             txt_contents = file1.readlines()
             if 'Male' in txt_contents[6]:
-                if class_name not in male_list:
-                    os.mkdir(os.path.join(male_folder, class_name))
-                    male_class_folder = os.path.join(male_folder, class_name)
-                    male_list.append(class_name)
-                # shutil.copy(file_name, male_class_folder)
-                shutil.copy(image_name + '.jpg', male_class_folder)
-            if 'Female' in txt_contents[6]:
-                if class_name not in female_list:
-                    os.mkdir(os.path.join(female_folder, class_name))
-                    female_class_folder = os.path.join(female_folder, class_name)
-                    female_list.append(class_name)
-                # shutil.copy(file_name, female_class_folder)
-                shutil.copy(image_name + '.jpg', female_class_folder)
+                male_list = copy_male_female_folder('Male', Destination_folder, class_name, male_list, file_name,
+                                                    Only_Image)
+            else:
+                female_list = copy_male_female_folder('Female', Destination_folder, class_name, female_list, file_name,
+                                                      Only_Image)
+
+
+# def split_male_female(Image_dir, Destination_folder):
+#     '''Split the Consolidated folders into male and Female folders'''
+#     class_names = os.listdir(Image_dir)
+#     class_names = sorted(class_names)
+#     os.mkdir(os.path.join(Destination_folder, 'Male'))
+#     os.mkdir(os.path.join(Destination_folder, 'Female'))
+#     male_folder = os.path.join(Destination_folder, 'Male')
+#     female_folder = os.path.join(Destination_folder, 'Female')
+#     male_list = []
+#     female_list = []
+#     for class_name in class_names:
+#         class_folder = os.path.join(Image_dir, class_name)
+#         li_files = glob.glob(class_folder + '/*.txt')
+#         li_files = sorted(li_files)
+#         for file_name in li_files:
+#             # base_name = os.path.basename(file_name)
+#             image_name = file_name.split('.')[0]
+#             file1 = open(file_name, 'r')
+#             txt_contents = file1.readlines()
+#             if 'Male' in txt_contents[6]:
+#                 if class_name not in male_list:
+#                     os.mkdir(os.path.join(male_folder, class_name))
+#                     male_class_folder = os.path.join(male_folder, class_name)
+#                     male_list.append(class_name)
+#                 # shutil.copy(file_name, male_class_folder)
+#                 shutil.copy(image_name + '.jpg', male_class_folder)
+#             if 'Female' in txt_contents[6]:
+#                 if class_name not in female_list:
+#                     os.mkdir(os.path.join(female_folder, class_name))
+#                     female_class_folder = os.path.join(female_folder, class_name)
+#                     female_list.append(class_name)
+#                 # shutil.copy(file_name, female_class_folder)
+#                 shutil.copy(image_name + '.jpg', female_class_folder)
 
 
 def copy_images_training(Image_dir, Destination_folder):
@@ -207,27 +248,46 @@ def copy_images_training(Image_dir, Destination_folder):
                     # shutil.copy(image_name+'.txt', dest_class_folder)
 
 
+def create_csv_for_attrbiute(Image_dir):
+    all_data = []
+    class_names = os.listdir(Image_dir)
+    for class_name in class_names:
+        class_folder = os.path.join(Image_dir, class_name)
+        li_files = glob.glob(class_folder + '/*.txt')
+        for file_name in li_files:
+            # base_name = os.path.basename(file_name)
+            image_name = file_name.split('.')[0]
+            base_name = os.path.basename(image_name)
+            file1 = open(file_name, 'r')
+            txt_contents = file1.readlines()
+            all_data.append([base_name+'.jpg', class_name, txt_contents[6].strip().split(';')[0]])
+    all_data = np.array(all_data)
+    save_csv(data=all_data,path='attribute_data.csv',fieldnames=['id','className','gender'])
+
+
+
 def create_dir(folder):
     if not (os.path.exists(folder)):
         os.mkdir(folder)
 
+
 def diff_two_folders(folder_1, folder_2):
-    li_files_1=os.listdir(folder_1)
-    li_files_2=os.listdir(folder_2)
+    li_files_1 = os.listdir(folder_1)
+    li_files_2 = os.listdir(folder_2)
 
-    difference_list = (list(list(set(li_files_1)-set(li_files_2)) + list(set(li_files_2)-set(li_files_1))))
+    difference_list = (list(list(set(li_files_1) - set(li_files_2)) + list(set(li_files_2) - set(li_files_1))))
     print(difference_list)
-
 
 
 if __name__ == '__main__':
     Image_folder = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/UBIPeriocular'
     Class_folder = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders'
     Class_folder_single_eye = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders_Left_Images'
-    Class_folder_single_eye_split = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders_Left_Images_Split'
+    Class_folder_single_eye_split = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders_Left_Split'
     Consolidated_folder = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Consolidated_Folders'
     Male_Female_folder = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Male_Female_Folders'
     Male_Female_training_folder = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Male_Female_Training_Folders_Images'
+    Male_Female_folder_Left_Split = '/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Male_Female_folder_Left_Split'
 
     # Creating Directories
     create_dir(Class_folder)
@@ -236,6 +296,7 @@ if __name__ == '__main__':
     create_dir(Male_Female_training_folder)
     create_dir(Class_folder_single_eye)
     create_dir(Class_folder_single_eye_split)
+    create_dir(Male_Female_folder_Left_Split)
 
     # create_class_folders(Image_folder, Class_folder)
     # count_left_right_eye(Class_folder)
@@ -245,3 +306,6 @@ if __name__ == '__main__':
     # split_male_female(Consolidated_folder,Male_Female_folder)
     # copy_images_training(Male_Female_folder,Male_Female_training_folder)
     # split_classes_more_images(Class_folder_single_eye_split,30,False)
+    # split_male_female(Class_folder_single_eye_split, Male_Female_folder_Left_Split, False)
+    create_csv_for_attrbiute(Class_folder_single_eye_split)
+

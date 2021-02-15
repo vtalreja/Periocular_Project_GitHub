@@ -15,4 +15,7 @@ Again trained above squeezenet for 100 epochs. Best Value_acc  was 81.1 for 98th
 
 In all the above runs the learning rate was constant at 0.001
 
-Now, fixed that issue and ran the Squeezenet_1_0 for 150 epochs with exponential LR decay of 0.1 every 50 epochs.
+Now, fixed that issue and ran the Squeezenet_1_0 for 150 epochs with exponential LR decay of 0.1 every 50 epochs. This did not help and the val acc was only 65%
+
+So, again ran Squeezenet for 150 epochs with a fixed LR of 0.001. Best Val_acc is 86.11 for epoch 148.
+Ran it again for 180 epochs. the best Val acc was 88.23 for 175 epochs

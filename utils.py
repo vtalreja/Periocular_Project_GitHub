@@ -10,9 +10,17 @@ import matplotlib.pyplot as plt
 import time
 import os
 import copy
+import csv
 from torchsummary import summary
 
 
+
+def save_csv(data, path, fieldnames=['image_path', 'class_name_label', 'gender_label']):
+    with open(path, 'w', newline='') as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in data:
+            writer.writerow(dict(zip(fieldnames, row)))
 
 def adjust_learning_rate(optimizer, init_lr, target_lr, epoch, factor, every):
     lrd = (init_lr - target_lr) / every
@@ -55,7 +63,7 @@ def write_results_csv(text_file, data):
 def load_ckp(checkpoint_fpath, model, optimizer,scheduler):
     checkpoint = torch.load(checkpoint_fpath)
     model.load_state_dict(checkpoint['state_dict'])
-    optimizer.load_state_dict(checkpoint['optimizer'])
+    # optimizer.load_state_dict(checkpoint['optimizer'])
     start_epoch = checkpoint['epoch'] + 1
     train_metrics = checkpoint['train_metrics']
     val_metrics = checkpoint['val_metrics']

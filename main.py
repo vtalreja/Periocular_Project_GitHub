@@ -40,7 +40,7 @@ lr =0.001
 num_workers = 4
 
 # Number of epochs to train for
-num_epochs = 150
+num_epochs = 180
 
 ngpu = 2
 
@@ -59,7 +59,15 @@ if not (os.path.exists(results_dir)):
 train_results_txt = os.path.join(results_dir, 'results_train_metrics.txt')
 val_results_txt = os.path.join(results_dir, 'results_val_metrics.txt')
 
-dataloaders, dataset_sizes, class_names = load_data(data_dir, split_list, batch_size, num_workers)
+# Opening JSON file
+f = open('runtime.json', )
+
+# returns JSON object as
+# a dictionary
+data = json.load(f)
+
+
+dataloaders, dataset_sizes, class_names = load_data(data_dir, split_list, batch_size, num_workers,False)
 
 # Get a batch of training data
 inputs, classes = next(iter(dataloaders['train']))
@@ -68,15 +76,18 @@ inputs, classes = next(iter(dataloaders['train']))
 out = torchvision.utils.make_grid(inputs)
 
 imshow(out, title=[class_names[x] for x in classes])
+if classification:
+    if model_name == "vgg":
+        """ VGG16_bn
+        """
+        model = classification_model(model_name, num_classes=len(class_names), use_pretrained=True)
+    elif model_name in ["resnet", "squeezenet"]:
+        """ Resnet50 or squeezenet1_0
+        """
+        model = initialize_model(model_name, num_classes=len(class_names), use_pretrained=True)
+else :
+    model = attribute_model(model_name,num_classes=len(class_names),use_pretrained=True)
 
-if model_name == "vgg":
-    """ VGG16_bn
-    """
-    model = classification_model(model_name, num_classes=len(class_names), use_pretrained=True)
-elif model_name in ["resnet", "squeezenet"]:
-    """ Resnet50 or squeezenet1_0
-    """
-    model = initialize_model(model_name, num_classes=len(class_names), use_pretrained=True)
 
 # BCE loss and Adam optimizer
 criterion = nn.CrossEntropyLoss()

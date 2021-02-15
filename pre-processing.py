@@ -262,7 +262,7 @@ def create_csv_for_attrbiute(Image_dir):
             txt_contents = file1.readlines()
             all_data.append([base_name+'.jpg', class_name, txt_contents[6].strip().split(';')[0]])
     all_data = np.array(all_data)
-    save_csv(data=all_data,path='attribute_data.csv',fieldnames=['id','className','gender'])
+    save_csv(data=all_data,path='attribute_data.csv',fieldnames=['id','class_name_label','gender_label'])
 
 
 

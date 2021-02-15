@@ -1,0 +1,10 @@
+{
+  "batch_size": 30,
+  "head_configs": [
+    {
+      "gender_label": 2
+    }
+  ]
+}
+
+			

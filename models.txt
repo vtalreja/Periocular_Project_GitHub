@@ -19,3 +19,11 @@ Now, fixed that issue and ran the Squeezenet_1_0 for 150 epochs with exponential
 
 So, again ran Squeezenet for 150 epochs with a fixed LR of 0.001. Best Val_acc is 86.11 for epoch 148.
 Ran it again for 180 epochs. the best Val acc was 88.23 for 175 epochs
+
+
+Attribute Classification : For attribute classification, we first ran Vgg model for 30 epochs with lr 0.001 with best val acc as 96.68 at epoch 26. However, the validation was zig-zagging.
+Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/Attribute_Classification_Results/vgg_results_30_epochs'
+So decided to try a lower learning rate of 0.0005 but higher number of epochs =50. So, for 50 epochs run with a learning rate of 0.0005, Best val Acc: 0.951066 , which is for epoch: 40.
+Restarted training for a 10 more epochs Best val Acc: 0.962904 , which is for epoch: 52. Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/Attribute_Classification_Results/vgg_results_50_epochs_lr_0.0005'
+
+

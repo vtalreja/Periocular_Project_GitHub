@@ -80,3 +80,12 @@ def save_ckp(save_dir,epoch,state_dict,optimizer,train_metrics,val_metrics,sched
         'scheduler': scheduler
     }
     torch.save(checkpoint,os.path.join(save_dir,'epoch_' + str(epoch) + '.pt'))
+
+def shuffle_dict(data_dict):
+    indices = list(range(len(data_dict['gender_label'])))
+    np.random.shuffle(indices)
+    shuffled_dict = {x:data_dict[x][indices] for x in ['img','gender_label','class_name_label']}
+    return shuffled_dict
+    # data_dict['img'] = data_dict['img'][indices]
+    # data_dict['gender_label'] = data_dict['gender_label'][indices]
+    # data_dict['class_name_label'] = data_dict['class_name_label'][indices]

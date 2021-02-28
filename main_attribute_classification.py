@@ -20,12 +20,16 @@ from model_utils import *
 from model import *
 from utils import *
 
-# Top level data directory. Here we assume the format of the directory conforms
-#   to the ImageFolder structure
+# Classification folder
 data_dir = "/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders_Left_Images_Split"
 
+# Attribute classification folders
+image_folder='/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders_Left_Images_Split'
+output_folder='/home/n-lab/Documents/Periocular_Project_GitHub'
+attribute_data_csv_loc='attribute_data.csv'
+
 # Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
-model_name = "vgg"
+model_name = "resnet"
 
 # Number of classes in the dataset
 num_classes = 339
@@ -33,71 +37,75 @@ num_classes = 339
 # Batch size for training (change depending on how much memory you have)
 batch_size = 32
 
-classification = False
+classification = True
 
 # # Learning rate for optimizers
 # lr = 0.01
 # target_lr = 0.001
-lr = 0.0005
+lr = 0.01
 
 num_workers = 4
 
 # Number of epochs to train for
-num_epochs = 70
+num_epochs = 100
 
 ngpu = 2
 
 split_list = ['train', 'val']
 
-restart_training = True
+restart_training = False
 
 ckpt_fname = None
 
 device = torch.device("cuda:0" if (torch.cuda.is_available() and ngpu > 0) else "cpu")
 
-results_dir = os.path.join('Attribute_Classification_Results', model_name + '_results_' + str(50) + '_epochs_'+str(lr))
+results_dir = os.path.join('Classification_Results', model_name + '_results_' + str(num_epochs) + '_epochs_' + str(lr))
 if not (os.path.exists(results_dir)):
     os.mkdir(results_dir)
 
-# returns JSON object as
-# a dictionary
+# returns JSON object as a dictionary
 data = json.load(open('runtime.json', 'r'))
 
 train_results_txt = os.path.join(results_dir, 'results_train_metrics.txt')
 val_results_txt = os.path.join(results_dir, 'results_val_metrics.txt')
 
 data_loader = data_utils(batch_size=batch_size, train_size=0.75, num_workers=num_workers, num_classes_sampler=2,
-                         num_samples=16, balanced_batches=True)
-
-# dataloaders, dataset_sizes, class_names = data_loader.load_classification_data(data_dir, split_list)
-
-dataloaders, dataset_sizes, attribute_mapper = data_loader.load_attribute_classification_data(
-    image_folder='/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders_Left_Images_Split',
-    output_folder='/home/n-lab/Documents/Periocular_Project_GitHub', attribute_data_csv_loc='attribute_data.csv')
-
-# Get a batch of training data
-data_dict = next(iter(dataloaders['train']))
-new_data_dict = shuffle_dict(data_dict)
-classes = new_data_dict['gender_label']
-# Make a grid from batch
-out = torchvision.utils.make_grid(new_data_dict['img'])
-# title_list=[attribute_mapper.gender_id_to_name[x] for x in classes]
-imshow(out, title=[attribute_mapper.gender_labels[x] for x in classes])
-
+                         num_samples=16, balanced_batches=False)
 if classification:
+    dataloaders, dataset_sizes, class_names = data_loader.load_classification_data(data_dir, split_list)
+    data_dict = next(iter(dataloaders['train']))
+    # new_data_dict = shuffle_dict(data_dict)
+    classes = data_dict[1]
+    # Make a grid from batch
+    out = torchvision.utils.make_grid(data_dict[0])
+    # title_list=[attribute_mapper.gender_id_to_name[x] for x in classes]
+    imshow(out, title=[class_names[x] for x in classes])
     if model_name == "vgg":
         """ VGG16_bn
         """
-        model = classification_model(model_name, num_classes=attribute_mapper.num_class_names, use_pretrained=True)
+        model = classification_model(model_name, num_classes=len(class_names), use_pretrained=True)
     elif model_name in ["resnet", "squeezenet"]:
-        """ Resnet50 or squeezenet1_0
+        """ Resnet18 or squeezenet1_0
         """
-        model = initialize_model(model_name, num_classes=attribute_mapper.num_class_names, use_pretrained=True)
+        model = initialize_model(model_name, num_classes=len(class_names), use_pretrained=True)
 else:
+    dataloaders, dataset_sizes, attribute_mapper = data_loader.load_attribute_classification_data(
+        image_folder=image_folder,output_folder=output_folder, attribute_data_csv_loc=attribute_data_csv_loc)
+
+    # Get a batch of training data
+    data_dict = next(iter(dataloaders['train']))
+    new_data_dict = shuffle_dict(data_dict)
+    classes = new_data_dict['gender_label']
+    # Make a grid from batch
+    out = torchvision.utils.make_grid(new_data_dict['img'])
+    # title_list=[attribute_mapper.gender_id_to_name[x] for x in classes]
+    imshow(out, title=[attribute_mapper.gender_labels[x] for x in classes])
+
     model = attribute_model(
         load_model_fname='/home/n-lab/Documents/Periocular_Project_GitHub/vgg_results_70epochs/epoch_68.pth',
         model_name=model_name, num_classes_classification=attribute_mapper.num_class_names, use_pretrained=True,
         head_config=data['head_configs'][0])
+
 
 # BCE loss and Adam optimizer
 criterion = nn.CrossEntropyLoss()
@@ -136,14 +144,32 @@ if (restart_training):
 print(model)
 
 # Training Loop
-model, train_metrics, val_metrics = train_model_attribute(start_epoch=start_epoch, model=model, dataloaders=dataloaders,
-                                                          criterion=criterion, optimizer=optimizer,
-                                                          scheduler=exp_lr_scheduler,
-                                                          num_epochs=num_epochs, device=device, results_dir=results_dir,
-                                                          train_metrics=train_metrics, val_metrics=val_metrics,head_config=data['head_configs'][0],
-                                                          is_inception=False)
 
-visualize_model_attribute(model, device, dataloaders, attribute_mapper.gender_labels, data['head_configs'][0], num_images=6)
+if classification:
+    model, train_metrics, val_metrics = train_model(start_epoch=start_epoch, model=model,
+                                                    dataloaders=dataloaders,
+                                                    criterion=criterion, optimizer=optimizer,
+                                                    scheduler=exp_lr_scheduler,
+                                                    num_epochs=num_epochs, device=device,
+                                                    results_dir=results_dir,
+                                                    train_metrics=train_metrics, val_metrics=val_metrics,
+                                                    is_inception=False)
+    visualize_model(model, device, dataloaders, class_names,
+                    num_images=6)
+else:
+    model, train_metrics, val_metrics = train_model_attribute(start_epoch=start_epoch, model=model,
+                                                              dataloaders=dataloaders,
+                                                              criterion=criterion, optimizer=optimizer,
+                                                              scheduler=exp_lr_scheduler,
+                                                              num_epochs=num_epochs, device=device,
+                                                              results_dir=results_dir,
+                                                              train_metrics=train_metrics, val_metrics=val_metrics,
+                                                              head_config=data['head_configs'][0],
+                                                              is_inception=False)
+
+    visualize_model_attribute(model, device, dataloaders, attribute_mapper.gender_labels, data['head_configs'][0],
+                              num_images=6)
+
 print(train_metrics)
 print(val_metrics)
 

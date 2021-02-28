@@ -110,9 +110,9 @@ def initialize_model(model_name, num_classes, use_pretrained=True):
     input_size = 0
 
     if model_name == "resnet":
-        """ Resnet50
+        """ Resnet18
         """
-        model_ft = models.resnet50(pretrained=use_pretrained)
+        model_ft = models.resnet18(pretrained=use_pretrained)
         for param in model_ft.parameters():
             param.requires_grad = False
         num_ftrs = model_ft.fc.in_features

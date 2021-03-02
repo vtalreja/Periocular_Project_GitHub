@@ -37,10 +37,10 @@ class Attribute_Mapper():
         self.num_class_names = len(self.class_name_labels)
         self.num_genders = len(self.gender_labels)
 
-        # Assigning numeric labels to the categories. For example : Male is given a label of 0, Female is given a label of 1
         self.class_id_to_name = dict(zip(range(self.num_class_names), self.class_name_labels))
         self.class_name_to_id = dict(zip(self.class_name_labels, range(self.num_class_names)))
 
+        # Assigning numeric labels to the categories. For example : Male is given a label of 0, Female is given a label of 1
         self.gender_id_to_name = dict(zip(range(self.num_genders), self.gender_labels))
         self.gender_name_to_id = dict(zip(self.gender_labels, range(self.num_genders)))
 

@@ -6,7 +6,9 @@ But still feel that we should train it little more less. Will try to train it ti
 
 ResNet18 and ResNet 50: Used pre-trained, only trained mode.fc. Tried including multiple linear layers in miodel.fc similar to vgg_16_bn above. Tried (2048,1024),(1024,512),(512,339), but did not help the training was really slow even after 40 epochs the val acc was only 2%.
 Tried using pretrained model and only changing the number of classes in the linear layer as shown in "https://pytorch.org/tutorials/beginner/finetuning_torchvision_models_tutorial.html". However, the network was learning but very slow learning, we could reach only 30% after 60 epoochs.
-So, deleted all these results folders.
+So, deleted all these results folders. Then again tried Resnet 18 by increasing the learning rate to 0.01. Got good results with accuracy of 85.4 for epoch 95.
+The results are stored in "Classification_Results/resnet_results_100_epochs_0.01"
+
 
 Squeezenet_1_0: Training squeezenet1_0 by just changing the classification layer number of classes to 339 as in the above link from resnet. Training it for 80 epochs.
 The result wre saved in the folder "Classification_Results/squeezenet_results_80_epochs". Best val_acc was 74.11 for 80th epoch.
@@ -25,5 +27,17 @@ Attribute Classification : For attribute classification, we first ran Vgg model 
 Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/Attribute_Classification_Results/vgg_results_30_epochs'
 So decided to try a lower learning rate of 0.0005 but higher number of epochs =50. So, for 50 epochs run with a learning rate of 0.0005, Best val Acc: 0.951066 , which is for epoch: 40.
 Restarted training for a 10 more epochs Best val Acc: 0.962904 , which is for epoch: 52. Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/Attribute_Classification_Results/vgg_results_50_epochs_lr_0.0005'
+
+
+For attribute classification, I had to make some change in the model because for joint optimization, we will need the classifier branch as well. So then updated the model and ran the attribute classification
+for Vgg again. Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/Attribute_Classification_Results/vgg_results_80_epochs_0.0005_updated_model'.
+Best val Acc: 0.971586 , which is for epoch: 77. For the attribute classification, we need to lead a pre-trained classification model. The pretrained model that was loaded is
+'/home/n-lab/Documents/Periocular_Project_GitHub/vgg_results_70epochs/epoch_68.pth'.
+
+Joint Optimization: For Joint optimization, we ran the code in the script main_joint_optimization.py. We used the pretrained model for attribute classifier as
+'/home/n-lab/Documents/Periocular_Project_GitHub/Attribute_Classification_Results/vgg_results_80_epochs_0.0005_updated_model/epoch_77.pt'. For the classifier the model we loaded is
+'/home/n-lab/Documents/Periocular_Project_GitHub/vgg_results_70epochs/epoch_68.pth'. We trained for 100 epochs with a lr of 0.001.Best Class Acc: 0.996843 , which is for epoch: 100
+and gender_acc is 0.9937. The results are stored in '/home/n-lab/Documents/Periocular_Project_GitHub/Joint_Optim_Results/vgg_results_100_epochs_0.001_joint_model'.
+
 
 

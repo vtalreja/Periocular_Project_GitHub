@@ -54,10 +54,16 @@ class attribute_model(nn.Module):
                 param.requires_grad = False
             self.features = model_ft.features
             self.classifier = model_ft.classifier
-            self.classifier[3] = nn.Linear(2048, 512)
-            self.classifier[4] = nn.ReLU(True)
-            self.classifier[5] = nn.Dropout()
-            self.classifier[6] = nn.Linear(512, 256)
+            self.attribute_classifier = nn.Sequential(
+                nn.Linear(2048, 512),
+                nn.ReLU(True),
+                nn.Dropout(),
+                nn.Linear(512, 256))
+            # self.attribute_classifier = model_ft.classifier
+            # self.attribute_classifier[3] = nn.Linear(2048, 512)
+            # self.attribute_classifier[4] = nn.ReLU(True)
+            # self.attribute_classifier[5] = nn.Dropout()
+            # self.attribute_classifier[6] = nn.Linear(512, 256)
 
         # Define the heads attribute as a Module List as it will be easier to dynamically
         # assign the number of heads as nn.Linear modules depending on the configuration
@@ -92,7 +98,10 @@ class attribute_model(nn.Module):
         x = self.features(x)
         # x = self.avgpool(x)
         x = torch.flatten(x, 1)
-        x = self.classifier(x)
+        x = self.classifier[0](x)
+        x = self.classifier[1](x)
+        x = self.classifier[2](x)
+        x = self.attribute_classifier(x)
 
         output_dict = {}
 
@@ -101,6 +110,155 @@ class attribute_model(nn.Module):
             output_dict[name] = self.heads[i](x)
 
         return output_dict
+
+class joint_optimization_model(nn.Module):
+    def __init__(self, load_model_fname, load_model_attribute_name,model_name, num_classes_classification, use_pretrained, head_config):
+        super(joint_optimization_model, self).__init__()
+        if model_name == "vgg":
+            model_ft = attribute_model(load_model_fname, model_name, num_classes_classification, use_pretrained, head_config)
+            # model_ft = classification_model(model_name, num_classes_classification, use_pretrained)
+            # original saved file with DataParallel
+            state_dict = torch.load(load_model_attribute_name)
+
+            # create new OrderedDict that does not contain `module.`
+            new_state_dict = OrderedDict()
+            for k, v in state_dict['state_dict'].items():
+                name = k[7:]  # remove `module.`
+                new_state_dict[name] = v
+
+            # load params
+            # model_ft.load_state_dict(state_dict)
+            model_ft.load_state_dict(new_state_dict)
+            for param in model_ft.features.parameters():
+                param.requires_grad = False
+            for param in model_ft.classifier.parameters():
+                param.requires_grad = True
+
+
+            # for param in model_ft.parameters():
+            #     param.requires_grad = False
+            self.features = model_ft.features
+            self.classifier = model_ft.classifier
+            self.attribute_classifier = model_ft.attribute_classifier
+            self.heads = model_ft.heads
+            self.concat_fc = nn.Sequential(
+                nn.Linear(1024 + 256, 512),
+                nn.ReLU(True),
+                nn.Dropout())
+            self.final_classifier = nn.Linear(512, num_classes_classification)
+            self.head_config = head_config
+            # self.attribute_classifier = model_ft.classifier
+            # self.attribute_classifier[3] = nn.Linear(2048, 512)
+            # self.attribute_classifier[4] = nn.ReLU(True)
+            # self.attribute_classifier[5] = nn.Dropout()
+            # self.attribute_classifier[6] = nn.Linear(512, 256)
+
+
+    def _create_head(self, in_features, num_of_labels):
+        '''A function to creat the individual heads as a sequential model
+
+        Args:
+        in_features (int): The number of input features for the linear layer of the head
+        num_of_labels (int): The number of labels for the given head, which will also be the number of output features for the linear layer
+
+
+        Returns:
+        A nn.Linear layer, which corresponds to a single head of the multi-head classifier
+
+        '''
+        return nn.Linear(in_features=in_features, out_features=num_of_labels)
+
+    def forward(self, x):
+        x = self.features(x)
+        # x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.classifier[0](x)
+        x = self.classifier[1](x)
+        x_bottleneck = self.classifier[2](x)
+        x_class = self.classifier[3](x_bottleneck)
+
+
+        x_attr = self.attribute_classifier(x_bottleneck)
+
+        concatenated_x = torch.cat((x_class,x_attr),dim=1)
+
+        out_concat_layer = self.concat_fc(concatenated_x)
+        class_output = self.final_classifier(out_concat_layer)
+        output_dict = {}
+
+        for i, (name, num_classes) in enumerate(
+                self.head_config.items()):  # Enumerate through the head config to propagate the flattened tensor through the head classifiers
+            output_dict[name] = self.heads[i](x_attr)
+
+        return output_dict,class_output
+
+
+# class attribute_model(nn.Module):
+#     def __init__(self, load_model_fname, model_name, num_classes_classification, use_pretrained, head_config):
+#         super(attribute_model, self).__init__()
+#         if model_name == "vgg":
+#             model_ft = classification_model(model_name, num_classes_classification, use_pretrained)
+#             # original saved file with DataParallel
+#             state_dict = torch.load(load_model_fname)
+#             # create new OrderedDict that does not contain `module.`
+#             new_state_dict = OrderedDict()
+#             for k, v in state_dict.items():
+#                 name = k[7:]  # remove `module.`
+#                 new_state_dict[name] = v
+#             # load params
+#             # model.load_state_dict(new_state_dict)
+#             model_ft.load_state_dict(new_state_dict)
+#             for param in model_ft.parameters():
+#                 param.requires_grad = False
+#             self.features = model_ft.features
+#             self.classifier = model_ft.classifier
+#             self.classifier[3] = nn.Linear(2048, 512)
+#             self.classifier[4] = nn.ReLU(True)
+#             self.classifier[5] = nn.Dropout()
+#             self.classifier[6] = nn.Linear(512, 256)
+#
+#         # Define the heads attribute as a Module List as it will be easier to dynamically
+#         # assign the number of heads as nn.Linear modules depending on the configuration
+#         self.heads = nn.ModuleList()
+#
+#         # Defining this will help to get the keys name in the forward function
+#         self.head_config = head_config
+#
+#         self.Softmax = nn.Softmax(dim=1)  # Softmax to be used for evaluation
+#
+#         # Append each head as a nn.Linear model
+#         for head_name, num_label in (head_config.items()):
+#             h = self._create_head(256, num_label)
+#             self.heads.append(h)
+#         # self.heads.to(self.device)
+#
+#     def _create_head(self, in_features, num_of_labels):
+#         '''A function to creat the individual heads as a sequential model
+#
+#         Args:
+#         in_features (int): The number of input features for the linear layer of the head
+#         num_of_labels (int): The number of labels for the given head, which will also be the number of output features for the linear layer
+#
+#
+#         Returns:
+#         A nn.Linear layer, which corresponds to a single head of the multi-head classifier
+#
+#         '''
+#         return nn.Linear(in_features=in_features, out_features=num_of_labels)
+#
+#     def forward(self, x):
+#         x = self.features(x)
+#         # x = self.avgpool(x)
+#         x = torch.flatten(x, 1)
+#         x = self.classifier(x)
+#
+#         output_dict = {}
+#
+#         for i, (name, num_classes) in enumerate(
+#                 self.head_config.items()):  # Enumerate through the head config to propagate the flattened tensor through the head classifiers
+#             output_dict[name] = self.heads[i](x)
+#
+#         return output_dict
 
 
 def initialize_model(model_name, num_classes, use_pretrained=True):

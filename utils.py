@@ -54,10 +54,11 @@ def plot_metrics (train_metric,val_metric,results_dir,metric):
     plt.legend()
     plt.savefig(os.path.join (results_dir,metric +'.png'))
 
-def write_results_csv(text_file, data):
-    if text_file != None:
-        with open(text_file, 'a') as fp:
-            np.savetxt(fp, np.asarray(data), delimiter=',')
+def write_results_csv(csv_file, data):
+    if csv_file != None:
+        # with open(text_file, 'a') as fp:
+        #     np.savetxt(fp, np.asarray(data), delimiter=',')
+        np.savetxt(csv_file, data, delimiter=",")
 
 
 def load_ckp(checkpoint_fpath, model, optimizer,scheduler):

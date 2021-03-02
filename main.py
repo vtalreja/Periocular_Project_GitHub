@@ -59,15 +59,13 @@ if not (os.path.exists(results_dir)):
 train_results_txt = os.path.join(results_dir, 'results_train_metrics.txt')
 val_results_txt = os.path.join(results_dir, 'results_val_metrics.txt')
 
-# Opening JSON file
-f = open('runtime.json', )
 
-# returns JSON object as
-# a dictionary
-data = json.load(f)
+data_loader = data_utils(batch_size=batch_size, train_size=0.75, num_workers=num_workers, num_classes_sampler=2,
+                         num_samples=16, balanced_batches=False)
 
+dataloaders, dataset_sizes, class_names = data_loader.load_classification_data(data_dir, split_list)
 
-dataloaders, dataset_sizes, class_names = load_data(data_dir, split_list, batch_size, num_workers,False)
+# dataloaders, dataset_sizes, class_names = load_data(data_dir, split_list, batch_size, num_workers,False)
 
 # Get a batch of training data
 inputs, classes = next(iter(dataloaders['train']))
@@ -76,17 +74,15 @@ inputs, classes = next(iter(dataloaders['train']))
 out = torchvision.utils.make_grid(inputs)
 
 imshow(out, title=[class_names[x] for x in classes])
-if classification:
-    if model_name == "vgg":
-        """ VGG16_bn
-        """
-        model = classification_model(model_name, num_classes=len(class_names), use_pretrained=True)
-    elif model_name in ["resnet", "squeezenet"]:
-        """ Resnet50 or squeezenet1_0
-        """
-        model = initialize_model(model_name, num_classes=len(class_names), use_pretrained=True)
-else :
-    model = attribute_model(model_name,num_classes=len(class_names),use_pretrained=True)
+if model_name == "vgg":
+    """ VGG16_bn
+    """
+    model = classification_model(model_name, num_classes=len(class_names), use_pretrained=True)
+elif model_name in ["resnet", "squeezenet"]:
+    """ Resnet50 or squeezenet1_0
+    """
+    model = initialize_model(model_name, num_classes=len(class_names), use_pretrained=True)
+
 
 
 # BCE loss and Adam optimizer

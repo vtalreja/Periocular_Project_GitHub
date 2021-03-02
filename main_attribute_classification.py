@@ -29,7 +29,7 @@ output_folder='/home/n-lab/Documents/Periocular_Project_GitHub'
 attribute_data_csv_loc='attribute_data.csv'
 
 # Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
-model_name = "resnet"
+model_name = "vgg"
 
 # Number of classes in the dataset
 num_classes = 339
@@ -37,40 +37,42 @@ num_classes = 339
 # Batch size for training (change depending on how much memory you have)
 batch_size = 32
 
-classification = True
+classification = False
 
 # # Learning rate for optimizers
 # lr = 0.01
 # target_lr = 0.001
-lr = 0.01
+lr = 0.0005
 
 num_workers = 4
 
 # Number of epochs to train for
-num_epochs = 100
+num_epochs = 90
 
 ngpu = 2
 
 split_list = ['train', 'val']
 
-restart_training = False
+restart_training = True
 
 ckpt_fname = None
 
+balanced_batches = True
+
 device = torch.device("cuda:0" if (torch.cuda.is_available() and ngpu > 0) else "cpu")
 
-results_dir = os.path.join('Classification_Results', model_name + '_results_' + str(num_epochs) + '_epochs_' + str(lr))
+results_dir = os.path.join('Attribute_Classification_Results', model_name + '_results_' + str(80) + '_epochs_' + str(lr)+'_updated_model')
 if not (os.path.exists(results_dir)):
     os.mkdir(results_dir)
 
 # returns JSON object as a dictionary
 data = json.load(open('runtime.json', 'r'))
 
-train_results_txt = os.path.join(results_dir, 'results_train_metrics.txt')
-val_results_txt = os.path.join(results_dir, 'results_val_metrics.txt')
+train_results_csv = os.path.join(results_dir, 'results_train_metrics.csv')
+val_results_csv = os.path.join(results_dir, 'results_val_metrics.csv')
 
 data_loader = data_utils(batch_size=batch_size, train_size=0.75, num_workers=num_workers, num_classes_sampler=2,
-                         num_samples=16, balanced_batches=False)
+                         num_samples=16, balanced_batches=balanced_batches)
 if classification:
     dataloaders, dataset_sizes, class_names = data_loader.load_classification_data(data_dir, split_list)
     data_dict = next(iter(dataloaders['train']))
@@ -135,7 +137,7 @@ if (restart_training):
     model, optimizer, start_epoch, train_metrics, val_metrics, exp_lr_scheduler = load_ckp(latest_ckpt, model,
                                                                                            optimizer, exp_lr_scheduler)
     print("Last epoch on saved checkpoint is {}. Training will start from {} for more {} iterations".format(
-        start_epoch - 1, start_epoch, num_epochs - start_epoch - 1))
+        start_epoch - 1, start_epoch, num_epochs - (start_epoch - 1)))
 
 # summary(model, (3, 401, 501))
 
@@ -176,5 +178,5 @@ print(val_metrics)
 for metric in ['loss', 'acc']:
     plot_metrics(train_metrics[metric], val_metrics[metric], results_dir=results_dir, metric=metric)
 
-# write_results_csv(train_results_txt,train_metrics)
-# write_results_csv(val_results_txt,val_metrics)
+write_results_csv(train_results_csv,train_metrics)
+write_results_csv(val_results_csv,val_metrics)

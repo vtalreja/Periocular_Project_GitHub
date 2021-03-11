@@ -176,14 +176,18 @@ class joint_optimization_model(nn.Module):
         x = self.classifier[1](x)
         x_bottleneck = self.classifier[2](x)
         x_class = self.classifier[3](x_bottleneck)
+        x_class = self.classifier[4](x_class)
+        x_class = self.classifier[5](x_class)
+        class_output = self.classifier[6](x_class)
+
 
 
         x_attr = self.attribute_classifier(x_bottleneck)
 
-        concatenated_x = torch.cat((x_class,x_attr),dim=1)
-
-        out_concat_layer = self.concat_fc(concatenated_x)
-        class_output = self.final_classifier(out_concat_layer)
+        # concatenated_x = torch.cat((x_class,x_attr),dim=1)
+        #
+        # out_concat_layer = self.concat_fc(concatenated_x)
+        # class_output = self.final_classifier(out_concat_layer)
         output_dict = {}
 
         for i, (name, num_classes) in enumerate(

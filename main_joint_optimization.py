@@ -20,35 +20,72 @@ from model_utils import *
 from model import *
 from utils import *
 
+data_set = 'FRGC_S2004'
+
+
 # Classification folder
-data_dir = "/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders_Left_Images_Split"
+if data_set == 'FRGC':
+    data_dir = "/home/n-lab/Documents/Periocular_project/Datasets/FRGC_dataset_extracted_periocular_images/Class_Folders"  # For FRGC dataset
+elif data_set == 'FRGC_S2004':
+    data_dir = "/home/n-lab/Documents/Periocular_project/Datasets/FRGC_dataset_extracted_periocular_images_MTCNN/Spring2004_cropped_Class_Folders"  # FRGC Spring 2004
+elif data_set == 'UBIRIS_V2':
+    data_dir = "/home/n-lab/Documents/Periocular_project/Datasets/UBIris_v2/Class_Folders_No_Attributes"  # For UBIRIS_V2 dataset
+else:
+    data_dir = "/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders_Left_Images_Split"
+
+
 
 # Attribute classification folders
-image_folder='/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders_Left_Images_Split'
-output_folder='/home/n-lab/Documents/Periocular_Project_GitHub'
-attribute_data_csv_loc='attribute_data.csv'
+if data_set == 'FRGC':
+    image_folder = '/home/n-lab/Documents/Periocular_project/Datasets/FRGC_dataset_extracted_periocular_images/Class_Folders'
+    output_folder = '/home/n-lab/Documents/Periocular_Project_GitHub'
+    attribute_data_csv_loc = 'attribute_data_FRGC.csv'
+elif data_set == 'UBIRIS_V2':
+    image_folder = '/home/n-lab/Documents/Periocular_project/Datasets/UBIris_v2/Class_Folders_No_Attributes'
+    output_folder = '/home/n-lab/Documents/Periocular_Project_GitHub'
+    attribute_data_csv_loc = 'attribute_data_UBIRIS_V2.csv'
+elif data_set == 'FRGC_S2004':
+    image_folder = '/home/n-lab/Documents/Periocular_project/Datasets/FRGC_dataset_extracted_periocular_images_MTCNN/Spring2004_cropped_Class_Folders'
+    output_folder = '/home/n-lab/Documents/Periocular_Project_GitHub'
+    attribute_data_csv_loc = 'attribute_data_FRGC_Spring2004.csv'
+else:
+    image_folder='/home/n-lab/Documents/Periocular_project/Datasets/ubipr/Class_Folders_Left_Images_Split'
+    output_folder='/home/n-lab/Documents/Periocular_Project_GitHub'
+    attribute_data_csv_loc='attribute_data.csv'
 
 # Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
 model_name = "vgg"
 
 # Number of classes in the dataset
-num_classes = 339
+if data_set == 'FRGC':
+    num_classes = 110
+elif data_set == "UBIRIS_V2":
+    num_classes = 514
+elif data_set == 'FRGC_S2004':
+    num_classes = 690
+else:
+    num_classes = 339  # UBiPr
 
 # Batch size for training (change depending on how much memory you have)
-batch_size = 32
-
 classification = False
+
+# Batch size for training (change depending on how much memory you have)
+if not classification and 'FRGC' in data_set:
+    batch_size = 36
+else:
+    batch_size = 32
+
 joint_optimization = True
 
 # # Learning rate for optimizers
 # lr = 0.01
 # target_lr = 0.001
-lr = 0.0005
+lr = 0.001
 
 num_workers = 4
 
 # Number of epochs to train for
-num_epochs = 50
+num_epochs = 101
 
 ngpu = 2
 
@@ -62,18 +99,29 @@ balanced_batches = True
 
 device = torch.device("cuda:0" if (torch.cuda.is_available() and ngpu > 0) else "cpu")
 
-results_dir = os.path.join('Joint_Optim_Results', model_name + '_results_' + str(num_epochs) + '_epochs_' + str(lr)+'_joint_model')
+results_dir = os.path.join('FRGC_S2004_Joint_Optim_Results', model_name + '_results_' + str(num_epochs) + '_epochs_' + str(lr)+'_joint_model')
 if not (os.path.exists(results_dir)):
     os.mkdir(results_dir)
 
 # returns JSON object as a dictionary
-data = json.load(open('runtime.json', 'r'))
+if 'FRGC' in data_set:
+    data = json.load(open('runtime_FRGC.json', 'r'))
+else:
+    data = json.load(open('runtime.json', 'r'))
 
 train_results_csv = os.path.join(results_dir, 'results_train_metrics.csv')
 val_results_csv = os.path.join(results_dir, 'results_val_metrics.csv')
 
-data_loader = data_utils(batch_size=batch_size, train_size=0.75, num_workers=num_workers, num_classes_sampler=2,
-                         num_samples=16, balanced_batches=balanced_batches)
+if 'FRGC' in data_set and classification:
+    data_loader = data_utils(batch_size=batch_size, train_size=0.80, num_workers=num_workers, num_classes_sampler=8,
+                             num_samples=4, balanced_batches=balanced_batches, data_set=data_set)
+elif 'FRGC' in data_set and not classification:
+    data_loader = data_utils(batch_size=batch_size, train_size=0.80, num_workers=num_workers, num_classes_sampler=3,
+                             num_samples=12, balanced_batches=balanced_batches, data_set=data_set)
+else:
+    data_loader = data_utils(batch_size=batch_size, train_size=0.75, num_workers=num_workers, num_classes_sampler=2,
+                             num_samples=16, balanced_batches=balanced_batches, data_set=data_set)
+
 if classification:
     dataloaders, dataset_sizes, class_names = data_loader.load_classification_data(data_dir, split_list)
     data_dict = next(iter(dataloaders['train']))
@@ -96,18 +144,41 @@ elif joint_optimization:
         image_folder=image_folder, output_folder=output_folder, attribute_data_csv_loc=attribute_data_csv_loc)
     # Get a batch of training data
     data_dict = next(iter(dataloaders['train']))
-    new_data_dict = shuffle_dict(data_dict)
-    classes = new_data_dict['gender_label']
+    new_data_dict = shuffle_dict(data_dict, data_set=data_set)
     # Make a grid from batch
     out = torchvision.utils.make_grid(new_data_dict['img'])
     # title_list=[attribute_mapper.gender_id_to_name[x] for x in classes]
-    imshow(out, title=[attribute_mapper.gender_labels[x] for x in classes])
+    if 'FRGC' in data_set:
+        classes = new_data_dict['ethnicity_label']
+        imshow(out, title=[attribute_mapper.ethnicity_labels[x] for x in classes])
+    else:
+        classes = new_data_dict['gender_label']
+        imshow(out, title=[attribute_mapper.gender_labels[x] for x in classes])
 
-    model = joint_optimization_model(
+    if data_set == 'FRGC':
+        model = joint_optimization_model(
+            load_model_fname='/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_Classification_Results/vgg_results_300_epochs_0.001/epoch_291.pt',
+            load_model_attribute_name='/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_Attribute_Classification_Results/vgg_results_100_epochs_0.0007/epoch_90.pt',
+            model_name=model_name, num_classes_classification=attribute_mapper.num_class_names, use_pretrained=True,
+            head_config=data['head_configs'][0],data_set = data_set)
+    elif data_set == 'UBIRIS_V2':
+        model = joint_optimization_model(
+            load_model_fname='/home/n-lab/Documents/Periocular_Project_GitHub/UBRIS_V2_Classification_Results/vgg_results_350_epochs_0.001/epoch_350.pt',
+            load_model_attribute_name='/home/n-lab/Documents/Periocular_Project_GitHub/UBRIS_V2_Attribute_Classification_Results/vgg_results_100_epochs_0.0007/epoch_99.pt',
+            model_name=model_name, num_classes_classification=attribute_mapper.num_class_names, use_pretrained=True,
+            head_config=data['head_configs'][0], data_set=data_set)
+    elif data_set == 'FRGC_S2004':
+        model = joint_optimization_model(
+            load_model_fname='/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Classification_Results/vgg_results_350_epochs_0.001/epoch_346.pt',
+            load_model_attribute_name='/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Attribute_Classification_Results/vgg_results_110_epochs_0.001/epoch_109.pt',
+            model_name=model_name, num_classes_classification=attribute_mapper.num_class_names, use_pretrained=True,
+            head_config=data['head_configs'][0],data_set = data_set)
+    else:
+        model = joint_optimization_model(
         load_model_fname='/home/n-lab/Documents/Periocular_Project_GitHub/vgg_results_70epochs/epoch_68.pth',
         load_model_attribute_name ='/home/n-lab/Documents/Periocular_Project_GitHub/Attribute_Classification_Results/vgg_results_80_epochs_0.0005_updated_model/epoch_77.pt',
         model_name=model_name, num_classes_classification=attribute_mapper.num_class_names, use_pretrained=True,
-        head_config=data['head_configs'][0])
+        head_config=data['head_configs'][0],data_set = data_set)
 
 
 else:
@@ -116,7 +187,7 @@ else:
 
     # Get a batch of training data
     data_dict = next(iter(dataloaders['train']))
-    new_data_dict = shuffle_dict(data_dict)
+    new_data_dict = shuffle_dict(data_dict,data_set=data_set)
     classes = new_data_dict['gender_label']
     # Make a grid from batch
     out = torchvision.utils.make_grid(new_data_dict['img'])
@@ -140,8 +211,12 @@ optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
 
 start_epoch = 1
-train_metrics = {'loss': [], 'class_acc': [],'gender_acc':[]}
-val_metrics = {'loss': [], 'class_acc': [],'gender_acc':[]}
+if 'FRGC' in data_set:
+    train_metrics = {'loss': [], 'class_acc': [], 'class_acc_top_5': [], 'gender_acc': [],'ethnicity_acc' : []}
+    val_metrics = {'loss': [], 'class_acc': [], 'class_acc_top_5': [], 'gender_acc': [],'ethnicity_acc' : []}
+else:
+    train_metrics = {'loss': [], 'class_acc': [], 'class_acc_top_5': [],'gender_acc':[]}
+    val_metrics = {'loss': [], 'class_acc': [], 'class_acc_top_5': [],'gender_acc':[]}
 
 if (device.type == 'cuda') and (ngpu > 1):
     model = nn.DataParallel(model, list(range(ngpu)))
@@ -187,10 +262,10 @@ elif joint_optimization:
                                                               results_dir=results_dir,
                                                               train_metrics=train_metrics, val_metrics=val_metrics,
                                                               head_config=data['head_configs'][0],
-                                                              is_inception=False)
+                                                              is_inception=False,evaluate=False,data_set=data_set)
 
     visualize_model_joint_optim(model, device, dataloaders, attribute_mapper, data['head_configs'][0],results_dir=results_dir,
-                              num_images=6)
+                              num_images=6,data_set=data_set)
 
 else:
     model, train_metrics, val_metrics = train_model_attribute(start_epoch=start_epoch, model=model,
@@ -209,8 +284,12 @@ else:
 print(train_metrics)
 print(val_metrics)
 
-for metric in ['loss', 'class_acc','gender_acc']:
-    plot_metrics(train_metrics[metric], val_metrics[metric], results_dir=results_dir, metric=metric)
+if 'FRGC' in data_set:
+    for metric in ['loss', 'class_acc', 'class_acc_top_5','gender_acc','ethnicity_acc']:
+        plot_metrics(train_metrics[metric], val_metrics[metric], results_dir=results_dir, metric=metric)
+else:
+    for metric in ['loss', 'class_acc', 'class_acc_top_5','gender_acc']:
+        plot_metrics(train_metrics[metric], val_metrics[metric], results_dir=results_dir, metric=metric)
 
 # write_results_csv(train_results_csv,train_metrics)
 # write_results_csv(val_results_csv,val_metrics)

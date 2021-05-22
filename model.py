@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 
 class classification_model(nn.Module):
-    def __init__(self, model_name, num_classes, use_pretrained):
+    def __init__(self, model_name, num_classes, use_pretrained,data_set=None):
         super(classification_model, self).__init__()
 
         if model_name == "vgg":
@@ -17,15 +17,36 @@ class classification_model(nn.Module):
                 param.requires_grad = False
             self.features = model_ft.features
             # self.avgpool = nn.AdaptiveAvgPool2d((12, 12))
-            self.classifier = nn.Sequential(
-                nn.Linear(512 * 12 * 15, 2048),
-                nn.ReLU(True),
-                nn.Dropout(),
-                nn.Linear(2048, 1024),
-                nn.ReLU(True),
-                nn.Dropout(),
-                nn.Linear(1024, num_classes),
-            )
+            if data_set == 'FRGC' or data_set == 'UBIRIS_V2':
+                self.classifier = nn.Sequential(
+                    nn.Linear(512 * 6 * 4, 2048),
+                    nn.ReLU(True),
+                    nn.Dropout(),
+                    nn.Linear(2048, 1024),
+                    nn.ReLU(True),
+                    nn.Dropout(),
+                    nn.Linear(1024, num_classes),
+                )
+            if data_set == 'FRGC_S2004':
+                self.classifier = nn.Sequential(
+                    nn.Linear(512 * 4 * 6, 2048),
+                    nn.ReLU(True),
+                    nn.Dropout(),
+                    nn.Linear(2048, 1024),
+                    nn.ReLU(True),
+                    nn.Dropout(),
+                    nn.Linear(1024, num_classes),
+                )
+            else:
+                self.classifier = nn.Sequential(
+                    nn.Linear(512 * 12 * 15, 2048),
+                    nn.ReLU(True),
+                    nn.Dropout(),
+                    nn.Linear(2048, 1024),
+                    nn.ReLU(True),
+                    nn.Dropout(),
+                    nn.Linear(1024, num_classes),
+                )
 
     def forward(self, x):
         x = self.features(x)
@@ -36,14 +57,16 @@ class classification_model(nn.Module):
 
 
 class attribute_model(nn.Module):
-    def __init__(self, load_model_fname, model_name, num_classes_classification, use_pretrained, head_config):
+    def __init__(self, load_model_fname, model_name, num_classes_classification, use_pretrained, head_config,data_set = None):
         super(attribute_model, self).__init__()
         if model_name == "vgg":
-            model_ft = classification_model(model_name, num_classes_classification, use_pretrained)
+            model_ft = classification_model(model_name, num_classes_classification, use_pretrained,data_set=data_set)
             # original saved file with DataParallel
             state_dict = torch.load(load_model_fname)
             # create new OrderedDict that does not contain `module.`
             new_state_dict = OrderedDict()
+            if data_set in ['FRGC','UBIRIS_V2','FRGC_S2004']:
+                state_dict = state_dict['state_dict']
             for k, v in state_dict.items():
                 name = k[7:]  # remove `module.`
                 new_state_dict[name] = v
@@ -112,10 +135,10 @@ class attribute_model(nn.Module):
         return output_dict
 
 class joint_optimization_model(nn.Module):
-    def __init__(self, load_model_fname, load_model_attribute_name,model_name, num_classes_classification, use_pretrained, head_config):
+    def __init__(self, load_model_fname, load_model_attribute_name,model_name, num_classes_classification, use_pretrained, head_config,data_set=None):
         super(joint_optimization_model, self).__init__()
         if model_name == "vgg":
-            model_ft = attribute_model(load_model_fname, model_name, num_classes_classification, use_pretrained, head_config)
+            model_ft = attribute_model(load_model_fname, model_name, num_classes_classification, use_pretrained, head_config,data_set=data_set)
             # model_ft = classification_model(model_name, num_classes_classification, use_pretrained)
             # original saved file with DataParallel
             state_dict = torch.load(load_model_attribute_name)
@@ -176,25 +199,28 @@ class joint_optimization_model(nn.Module):
         x = self.classifier[1](x)
         x_bottleneck = self.classifier[2](x)
         x_class = self.classifier[3](x_bottleneck)
-        x_class = self.classifier[4](x_class)
-        x_class = self.classifier[5](x_class)
-        class_output = self.classifier[6](x_class)
+        # x_class = self.classifier[4](x_class)
+        # x_class = self.classifier[5](x_class)
+        # class_output = self.classifier[6](x_class)
 
 
 
         x_attr = self.attribute_classifier(x_bottleneck)
 
-        # concatenated_x = torch.cat((x_class,x_attr),dim=1)
-        #
-        # out_concat_layer = self.concat_fc(concatenated_x)
-        # class_output = self.final_classifier(out_concat_layer)
+        concatenated_x = torch.cat((x_class,x_attr),dim=1)
+
+        out_concat_layer = self.concat_fc(concatenated_x)
+
+        output_features = self.concat_fc[0](concatenated_x)
+
+        class_output = self.final_classifier(out_concat_layer)
         output_dict = {}
 
         for i, (name, num_classes) in enumerate(
                 self.head_config.items()):  # Enumerate through the head config to propagate the flattened tensor through the head classifiers
             output_dict[name] = self.heads[i](x_attr)
 
-        return output_dict,class_output
+        return output_dict,class_output,output_features
 
 
 # class attribute_model(nn.Module):

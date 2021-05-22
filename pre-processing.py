@@ -264,6 +264,14 @@ def create_csv_for_attrbiute(Image_dir):
     all_data = np.array(all_data)
     save_csv(data=all_data,path='attribute_data.csv',fieldnames=['id','class_name_label','gender_label'])
 
+def move_images(Image_folder,Dest_folder):
+    li_files = os.listdir(Image_folder)
+    for file in li_files:
+        if file.endswith('jpg'):
+            shutil.move(os.path.join(Image_folder,file),Dest_folder)
+
+
+
 
 
 def create_dir(folder):

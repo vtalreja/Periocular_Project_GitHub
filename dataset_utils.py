@@ -21,38 +21,54 @@ from utils import *
 
 
 class Attribute_Mapper():
-    def __init__(self, attribute_csv):
+    def __init__(self, attribute_csv,data_set=None):
         self.attrbute_csv = attribute_csv
+        self.data_set = data_set
         class_names_list = []
         gender_list = []
+        ethnicity_list = []
         with open(self.attrbute_csv) as f:
             reader = csv.DictReader(f)
             for row in reader:
                 class_names_list.append(row['class_name_label'])
                 gender_list.append(row['gender_label'])
+                if 'FRGC' in self.data_set:
+                    ethnicity_list.append(row['ethnicity_label'])
+        self.class_name_labels,self.num_class_names,self.class_id_to_name,self.class_name_to_id = self.mapping(class_names_list)
+        self.gender_labels,self.num_genders,self.gender_id_to_name,self.gender_name_to_id = self.mapping(gender_list)
+        if 'FRGC' in self.data_set:
+            self.ethnicity_labels, self.num_ethnicitys, self.ethnicity_id_to_name, self.ethnicity_name_to_id = self.mapping(
+                ethnicity_list)
 
-        self.class_name_labels = np.unique(class_names_list)
-        self.gender_labels = np.unique(gender_list)
+        # self.class_name_labels = np.unique(class_names_list)
+        # self.gender_labels = np.unique(gender_list)
+        #
+        # self.num_class_names = len(self.class_name_labels)
+        # self.num_genders = len(self.gender_labels)
+        #
+        # self.class_id_to_name = dict(zip(range(self.num_class_names), self.class_name_labels))
+        # self.class_name_to_id = dict(zip(self.class_name_labels, range(self.num_class_names)))
+        #
+        # # Assigning numeric labels to the categories. For example : Male is given a label of 0, Female is given a label of 1
+        # self.gender_id_to_name = dict(zip(range(self.num_genders), self.gender_labels))
+        # self.gender_name_to_id = dict(zip(self.gender_labels, range(self.num_genders)))
 
-        self.num_class_names = len(self.class_name_labels)
-        self.num_genders = len(self.gender_labels)
-
-        self.class_id_to_name = dict(zip(range(self.num_class_names), self.class_name_labels))
-        self.class_name_to_id = dict(zip(self.class_name_labels, range(self.num_class_names)))
-
-        # Assigning numeric labels to the categories. For example : Male is given a label of 0, Female is given a label of 1
-        self.gender_id_to_name = dict(zip(range(self.num_genders), self.gender_labels))
-        self.gender_name_to_id = dict(zip(self.gender_labels, range(self.num_genders)))
-
+    def mapping (self,attribute_list):
+        attribute_labels = np.unique(attribute_list)
+        num_attributes = len(attribute_labels)
+        attribute_id_to_name = dict(zip(range(num_attributes), attribute_labels))
+        attribute_name_to_id = dict(zip(attribute_labels, range(num_attributes)))
+        return attribute_labels,num_attributes,attribute_id_to_name,attribute_name_to_id
 
 class Attribute_Dataset(Dataset):
-    def __init__(self, data_csv, mapper, transform=None):
+    def __init__(self, data_csv, mapper, transform=None,data_set=None):
         self.transform = transform
         self.mapper = mapper
-
+        self.data_set = data_set
         self.data = []
         self.class_names = []
         self.genders = []
+        self.ethnicitys = []
 
         with open(data_csv) as f:
             reader = csv.DictReader(f)
@@ -60,6 +76,8 @@ class Attribute_Dataset(Dataset):
                 self.data.append(row['image_path'])
                 self.class_names.append(self.mapper.class_name_to_id[row['class_name_label']])
                 self.genders.append(self.mapper.gender_name_to_id[row['gender_label']])
+                if 'FRGC' in self.data_set:
+                    self.ethnicitys.append(self.mapper.ethnicity_name_to_id[row['ethnicity_label']])
 
     def __getitem__(self, index):
         image_path = self.data[index]
@@ -68,8 +86,13 @@ class Attribute_Dataset(Dataset):
 
         if self.transform:
             img = self.transform(img)
-
-        data_dict = {'img': img,
+        if 'FRGC' in self.data_set:
+            data_dict = {'img': img,
+                         'gender_label': self.genders[index],
+                         'class_name_label': self.class_names[index],
+                         'ethnicity_label': self.ethnicitys[index]}
+        else:
+            data_dict = {'img': img,
                      'gender_label': self.genders[index],
                      'class_name_label': self.class_names[index]}
 
@@ -102,12 +125,16 @@ class BalancedBatchSampler(BatchSampler):
     Returns batches of size n_classes * n_samples
     """
 
-    def __init__(self, dataset, n_classes, n_samples, attribute):
+    def __init__(self, dataset, n_classes, n_samples, attribute=None):
         loader = DataLoader(dataset)
         self.labels_list = []
-        for data_dict in loader:
-            label = data_dict[attribute]
-            self.labels_list.append(label)
+        if attribute:
+            for data_dict in loader:
+                label = data_dict[attribute]
+                self.labels_list.append(label)
+        else:
+            for _,label in loader:
+                self.labels_list.append(label)
         self.labels = torch.LongTensor(self.labels_list)
         self.labels_set = list(set(self.labels.numpy()))
         self.label_to_indices = {label: np.where(self.labels.numpy() == label)[0]
@@ -143,27 +170,59 @@ class BalancedBatchSampler(BatchSampler):
 
 class data_utils():
     def __init__(self, batch_size, train_size, num_workers, num_classes_sampler=None, num_samples=None,
-                 balanced_batches=False):
+                 balanced_batches=False,data_set = None):
         if balanced_batches:
             assert num_classes_sampler != None, " if balanced batches then num_classes_sampler cannot be None"
             assert num_samples != None, " if balanced batches then num_samples cannot be None"
         self.batch_size = batch_size
         self.balanced = balanced_batches
         self.train_size = train_size
-        self.data_transforms_dict = {
-            'train': transforms.Compose([
-                transforms.Resize((401, 501)),
-                transforms.RandomRotation(25),
-                transforms.RandomHorizontalFlip(p=0.5),
-                transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-            ]),
-            'val': transforms.Compose([
-                transforms.Resize((401, 501)),
-                transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-            ]),
-        }
+        self.data_set = data_set
+        if data_set == 'FRGC' or data_set == 'UBIRIS_V2':
+            self.data_transforms_dict = {
+                'train': transforms.Compose([
+                    transforms.Resize((200, 150)),
+                    transforms.RandomRotation(25),
+                    transforms.RandomHorizontalFlip(p=0.5),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                ]),
+                'val': transforms.Compose([
+                    transforms.Resize((200, 150)),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                ]),
+            }
+        elif data_set == 'FRGC_S2004':
+            self.data_transforms_dict = {
+                'train': transforms.Compose([
+                    transforms.Resize((150, 200)),
+                    transforms.RandomRotation(25),
+                    transforms.RandomHorizontalFlip(p=0.5),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                ]),
+                'val': transforms.Compose([
+                    transforms.Resize((150, 200)),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                ]),
+            }
+        else:
+            self.data_transforms_dict = {
+                'train': transforms.Compose([
+                    transforms.Resize((401, 501)),
+                    transforms.RandomRotation(25),
+                    transforms.RandomHorizontalFlip(p=0.5),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                ]),
+                'val': transforms.Compose([
+                    transforms.Resize((401, 501)),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                ]),
+            }
         self.num_classes_sampler = num_classes_sampler
         self.num_samples = num_samples
         self.num_workers = num_workers
@@ -190,10 +249,13 @@ class data_utils():
         class_names = my_datasets.classes
 
         if self.balanced:
-            balanced_batch_sampler = BalancedBatchSampler(data_dict['train'], self.num_classes_sampler,
-                                                          self.num_samples,
-                                                          'gender_label')
-
+            if 'FRGC' in self.data_set or self.data_set == 'UBIRIS_V2':
+                balanced_batch_sampler = BalancedBatchSampler(data_dict['train'], self.num_classes_sampler,
+                                                              self.num_samples)
+            else:
+                balanced_batch_sampler = BalancedBatchSampler(data_dict['train'], self.num_classes_sampler,
+                                                              self.num_samples,
+                                                              'gender_label')
             dataloaders = {
                 'train': torch.utils.data.DataLoader(data_dict['train'], batch_sampler=balanced_batch_sampler,
                                                      num_workers=self.num_workers),
@@ -211,15 +273,19 @@ class data_utils():
         train_csv_loc, val_csv_loc = self.split_data(image_folder=image_folder, output_folder=output_folder,
                                                      attribute_data_csv=attribute_data_csv_loc)
 
-        attribute_mapper = Attribute_Mapper(attribute_csv=attribute_data_csv_loc)
+        attribute_mapper = Attribute_Mapper(attribute_csv=attribute_data_csv_loc,data_set=self.data_set)
 
-        train_dataset = Attribute_Dataset(train_csv_loc, attribute_mapper, transform=self.data_transforms_dict['train'])
-        val_dataset = Attribute_Dataset(val_csv_loc, attribute_mapper, transform=self.data_transforms_dict['val'])
+        train_dataset = Attribute_Dataset(train_csv_loc, attribute_mapper, transform=self.data_transforms_dict['train'],data_set=self.data_set)
+        val_dataset = Attribute_Dataset(val_csv_loc, attribute_mapper, transform=self.data_transforms_dict['val'],data_set=self.data_set)
 
         dataset_sizes = {'train': len(train_dataset), 'val': len(val_dataset)}
 
         if self.balanced:
-            balanced_batch_sampler = BalancedBatchSampler(train_dataset, self.num_classes_sampler, self.num_samples,
+            if 'FRGC' in self.data_set:
+                balanced_batch_sampler = BalancedBatchSampler(train_dataset, self.num_classes_sampler, self.num_samples,
+                                                              'ethnicity_label')
+            else:
+                balanced_batch_sampler = BalancedBatchSampler(train_dataset, self.num_classes_sampler, self.num_samples,
                                                           'gender_label')
 
             dataloaders = {'train': torch.utils.data.DataLoader(train_dataset, batch_sampler=balanced_batch_sampler,
@@ -253,12 +319,16 @@ class data_utils():
                 gender = row['gender_label']
                 class_name = row['class_name_label']
                 img_name = os.path.join(image_folder, class_name, str(img_id))
-                # check if file is in place
-                # if os.path.exists(img_name):
-                    # # check if the image has 80*60 pixels with 3 channels
-                    # img = Image.open(img_name)
-                    # if img.size == (60, 80) and img.mode == "RGB":
-                all_data.append([img_name, class_name, gender])
+                if 'FRGC' in self.data_set:
+                    ethnicity = row['ethnicity_label']
+                    all_data.append([img_name, class_name, gender, ethnicity])
+                else:
+                    # check if file is in place
+                    # if os.path.exists(img_name):
+                        # # check if the image has 80*60 pixels with 3 channels
+                        # img = Image.open(img_name)
+                        # if img.size == (60, 80) and img.mode == "RGB":
+                    all_data.append([img_name, class_name, gender])
 
         # set the seed of the random numbers generator, so we can reproduce the results later
         # np.random.seed(42)
@@ -269,10 +339,30 @@ class data_utils():
 
         # split the data into train/val and save them as csv files
         indices, split = self.split_size(data_set_size)
-        train_csv = os.path.join(output_folder, 'train.csv')
-        val_csv = os.path.join(output_folder, 'val.csv')
-        save_csv(all_data[indices][:split], train_csv)
-        save_csv(all_data[indices][split:], val_csv)
+        if self.data_set == 'FRGC':
+            train_csv = os.path.join(output_folder, 'train_FRGC.csv')
+            val_csv = os.path.join(output_folder, 'val_FRGC.csv')
+            save_csv(all_data[indices][:split], train_csv,
+                     fieldnames=['image_path', 'class_name_label', 'gender_label', 'ethnicity_label'])
+            save_csv(all_data[indices][split:], val_csv,
+                     fieldnames=['image_path', 'class_name_label', 'gender_label', 'ethnicity_label'])
+        elif self.data_set == 'FRGC_S2004':
+            train_csv = os.path.join(output_folder, 'train_FRGC_S2004.csv')
+            val_csv = os.path.join(output_folder, 'val_FRGC_S2004.csv')
+            save_csv(all_data[indices][:split], train_csv,
+                     fieldnames=['image_path', 'class_name_label', 'gender_label', 'ethnicity_label'])
+            save_csv(all_data[indices][split:], val_csv,
+                     fieldnames=['image_path', 'class_name_label', 'gender_label', 'ethnicity_label'])
+        elif self.data_set == 'UBIRIS_V2':
+            train_csv = os.path.join(output_folder, 'train_UBIRIS_V2.csv')
+            val_csv = os.path.join(output_folder, 'val_UBIRIS_V2.csv')
+            save_csv(all_data[indices][:split], train_csv,fieldnames=['image_path', 'class_name_label', 'gender_label'])
+            save_csv(all_data[indices][split:], val_csv,fieldnames=['image_path', 'class_name_label', 'gender_label'])
+        else:
+            train_csv = os.path.join(output_folder, 'train.csv')
+            val_csv = os.path.join(output_folder, 'val.csv')
+            save_csv(all_data[indices][:split], train_csv,fieldnames=['image_path', 'class_name_label', 'gender_label'])
+            save_csv(all_data[indices][split:], val_csv,fieldnames=['image_path', 'class_name_label', 'gender_label'])
         return train_csv, val_csv
 
     def split_size(self, num_train):

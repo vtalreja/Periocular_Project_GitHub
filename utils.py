@@ -12,6 +12,11 @@ import os
 import copy
 import csv
 from torchsummary import summary
+from sklearn.metrics import (
+    confusion_matrix,
+    ConfusionMatrixDisplay
+)
+from collections import OrderedDict
 
 
 
@@ -64,12 +69,29 @@ def write_results_csv(csv_file, data):
 def load_ckp(checkpoint_fpath, model, optimizer,scheduler):
     checkpoint = torch.load(checkpoint_fpath)
     model.load_state_dict(checkpoint['state_dict'])
-    # optimizer.load_state_dict(checkpoint['optimizer'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
     start_epoch = checkpoint['epoch'] + 1
     train_metrics = checkpoint['train_metrics']
     val_metrics = checkpoint['val_metrics']
     scheduler.load_state_dict(checkpoint['scheduler'])
     return model, optimizer, start_epoch,train_metrics,val_metrics,scheduler
+
+def load_ckp_feature_extract(checkpoint_fpath, model, optimizer,scheduler):
+    checkpoint = torch.load(checkpoint_fpath)
+    new_state_dict = OrderedDict()
+    for k, v in checkpoint['state_dict'].items():
+        name = k[7:]  # remove `module.`
+        new_state_dict[name] = v
+    # load params
+    model.load_state_dict(new_state_dict)
+    # model.load_state_dict(checkpoint['state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+    start_epoch = checkpoint['epoch'] + 1
+    train_metrics = checkpoint['train_metrics']
+    val_metrics = checkpoint['val_metrics']
+    scheduler.load_state_dict(checkpoint['scheduler'])
+    return model, optimizer, start_epoch,train_metrics,val_metrics,scheduler
+
 
 def save_ckp(save_dir,epoch,state_dict,optimizer,train_metrics,val_metrics,scheduler):
     checkpoint = {
@@ -82,11 +104,27 @@ def save_ckp(save_dir,epoch,state_dict,optimizer,train_metrics,val_metrics,sched
     }
     torch.save(checkpoint,os.path.join(save_dir,'epoch_' + str(epoch) + '.pt'))
 
-def shuffle_dict(data_dict):
+def shuffle_dict(data_dict,data_set = None):
     indices = list(range(len(data_dict['gender_label'])))
     np.random.shuffle(indices)
-    shuffled_dict = {x:data_dict[x][indices] for x in ['img','gender_label','class_name_label']}
+    if 'FRGC' in data_set:
+        shuffled_dict = {x: data_dict[x][indices] for x in ['img', 'gender_label', 'ethnicity_label','class_name_label']}
+    else:
+        shuffled_dict = {x:data_dict[x][indices] for x in ['img','gender_label','class_name_label']}
     return shuffled_dict
     # data_dict['img'] = data_dict['img'][indices]
     # data_dict['gender_label'] = data_dict['gender_label'][indices]
     # data_dict['class_name_label'] = data_dict['class_name_label'][indices]
+
+def draw_confusion_matrix (gt_all,predicted_all,attribute_mapper,results_dir,title):
+    plt.figure(figsize=(15, 10))
+    cn_matrix = confusion_matrix(
+        y_true=gt_all,
+        y_pred=predicted_all,
+        labels=attribute_mapper,
+        normalize="true")
+    ConfusionMatrixDisplay(cn_matrix, attribute_mapper).plot(
+        include_values=False, xticks_rotation="vertical")
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig(os.path.join(results_dir, title+'_Confusion.png'))

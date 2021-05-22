@@ -1,3 +1,5 @@
+UBIPr dataset
+
 Vgg_16_bn: Used pre-trained model and only trained the classifier. In self.classifier included own linear layers of size (512*12*15,2048),(2048,1024),(1024,339). Did not use adaptive avg pooling
 Trained and tested this model for 100 epochs first. First trained this model for 100 epochs. the results were being saved only for the best epoch. The best val_acc was 98.7 and the bets epoch was 93.
 The result wre saved in the folder "vgg_results". Felt that we could be overfitting when looked at the loss and accracy plot. So decided to train a little less till 70 epochs. Next trained the model
@@ -31,7 +33,7 @@ Restarted training for a 10 more epochs Best val Acc: 0.962904 , which is for ep
 
 For attribute classification, I had to make some change in the model because for joint optimization, we will need the classifier branch as well. So then updated the model and ran the attribute classification
 for Vgg again. Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/Attribute_Classification_Results/vgg_results_80_epochs_0.0005_updated_model'.
-Best val Acc: 0.971586 , which is for epoch: 77. For the attribute classification, we need to lead a pre-trained classification model. The pretrained model that was loaded is
+Best val Acc: 0.971586 , which is for epoch: 77. For the attribute classification, we need to load a pre-trained classification model. The pretrained model that was loaded is
 '/home/n-lab/Documents/Periocular_Project_GitHub/vgg_results_70epochs/epoch_68.pth'.
 
 Joint Optimization: For Joint optimization, we ran the code in the script main_joint_optimization.py. We used the pretrained model for attribute classifier as
@@ -39,5 +41,153 @@ Joint Optimization: For Joint optimization, we ran the code in the script main_j
 '/home/n-lab/Documents/Periocular_Project_GitHub/vgg_results_70epochs/epoch_68.pth'. We trained for 100 epochs with a lr of 0.001.Best Class Acc: 0.996843 , which is for epoch: 100
 and gender_acc is 0.9937. The results are stored in '/home/n-lab/Documents/Periocular_Project_GitHub/Joint_Optim_Results/vgg_results_100_epochs_0.001_joint_model'.
 
+Tried joint optimization for 50 epochs with a lower learning of 0.0005. Best Class Acc: 0.973954 , which is for epoch: 45 and gender acc is 99.61. The results are stored in:
+'/home/n-lab/Documents/Periocular_Project_GitHub/Joint_Optim_Results/vgg_results_50_epochs_0.0005_joint_model'
+
+Tried joint optimization for multitask without having the concatenation between the attribute and the classifer. Trained for 100 epochs with a learning of 0.001. Best Class Acc: 0.996054 , which is for epoch: 56
+ and gender acc is 99.45. The results are stored in: '/home/n-lab/Documents/Periocular_Project_GitHub/Joint_Optim_Results/vgg_results_100_epochs_0.001_joint_model_multitask'
 
 
+FRGC dataset
+
+Classification:
+Used the pre-trained VGG 16 network for FRGC dataset.
+For FRGC dataset for the classification network, I used batched sampler with 4 samples per subject and 8 subjects in a batch for a total of 32 images in a batch.
+Ran the script main_attribute_classification.py for FRGC dataset for vgg network.
+Ran it for 300 epochs. The results are stored at '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_Classification_Results/vgg_results_300_epochs_0.001'.
+Best val Acc: 0.903654 , which is for epoch: 291
+Also, tried it for 250 epochs. The results are stored at '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_Classification_Results/vgg_results_250_epochs_0.001'.
+Best val Acc: 0.860465 , which is for epoch: 209
+
+
+For attribute classification:
+Tried running the model after making a lot of changes for making the code working for the FRGC dataset.
+Made changes to model.py, model_utils.py and main_attribute_classification.py.
+Train the attribute model for 100 epochs at the lr of 0.0007.
+Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_Attribute_Classification_Results/vgg_results_100_epochs_0.0007'.
+Best val Acc: 0.946844 , which is for epoch: 90
+val gender_label Acc : 0.9302
+val ethnicity_label Acc : 0.9635
+For the attribute classification, we need to load a pre-trained classification model.
+The pretrained model that was loaded is'/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_Classification_Results/vgg_results_300_epochs_0.001/epoch_291.pt'.
+
+For joint optim :
+Train the Joint Optim model for 100 epochs at the lr of 0.0007.
+Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_Joint_Optim_Results/vgg_results_100_epochs_0.0007_joint_model'.
+Best Class Acc: 0.9169 , which is for epoch: 90
+val gender_label Acc : 0.9635
+val ethnicity_label Acc : 0.9767
+Avg_Attr_Acc : 0.9701
+For the joint optimization, we need to load a pre-trained classification model and attribute model.
+The pretrained classification model that was loaded is'/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_Classification_Results/vgg_results_300_epochs_0.001/epoch_291.pt'.
+The pretrained attribute model is '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_Attribute_Classification_Results/vgg_results_100_epochs_0.0007/epoch_90.pt'
+
+
+UBIRIS V2 dataset
+
+Classification:
+Used the pre-trained VGG 16 network for UBIRIS V2 dataset.
+For UBIRIS V2 dataset for the classification network, I used batched sampler with 4 samples per subject and 8 subjects in a batch for a total of 32 images in a batch.
+Ran the script main_attribute_classification.py for UBIRIS V2 dataset for vgg network.
+Ran it for 350 epochs. The results are stored at '/home/n-lab/Documents/Periocular_Project_GitHub/UBIRIS_V2_Classification_Results/vgg_results_350_epochs_0.001'.
+Best val Acc: 0.839551 , which is for epoch: 350
+
+For attribute classification:
+Train the attribute model for 100 epochs at the lr of 0.0007.
+Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/UBIRIS_V2_Attribute_Classification_Results/vgg_results_100_epochs_0.0007'.
+Best val Acc: 0.957624 , which is for epoch: 99
+val gender_label Acc : 0.9576
+For the attribute classification, we need to load a pre-trained classification model.
+The pretrained model that was loaded is'/home/n-lab/Documents/Periocular_Project_GitHub/UBIRIS_V2_Classification_Results/vgg_results_350_epochs_0.001/epoch_350.pt'.
+
+For joint optim :
+Train the Joint Optim model for 100 epochs at the lr of 0.001.
+Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/UBIRIS_V2_Joint_Optim_Results/vgg_results_100_epochs_0.001_joint_model'.
+Best Class Acc: 0.923941 , which is for epoch: 94
+val gender_label Acc : 0.9750
+For the joint optimization, we need to load a pre-trained classification model and attribute model.
+The pretrained classification model that was loaded is'/home/n-lab/Documents/Periocular_Project_GitHub/UBIRIS_V2_Classification_Results/vgg_results_350_epochs_0.001/epoch_350.pt'.
+The pretrained attribute model is '/home/n-lab/Documents/Periocular_Project_GitHub/UBIRIS_V2_Attribute_Classification_Results/vgg_results_100_epochs_0.0007/epoch_99.pt'
+
+Trained the Joint Optim model for 100 epochs at the lr of 0.0007 as well.
+Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/UBIRIS_V2_Joint_Optim_Results/vgg_results_100_epochs_0.0007_joint_model'.
+Best Class Acc: 0.9268 , which is for epoch: 98
+val gender_label Acc : 0.9750
+
+
+FRGC Spring 2004 full dataset
+
+Classification:
+Used the pre-trained VGG 16 network for FRGC dataset.
+For FRGC dataset for the classification network, I used batched sampler with 4 samples per subject and 8 subjects in a batch for a total of 32 images in a batch.
+Ran the script main_attribute_classification.py for FRGC dataset for vgg network.
+Ran it for 300 epochs. The results are stored at '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Classification_Results/vgg_results_300_epochs_0.001'.
+Best val Acc: 0.864495 , which is for epoch: 300
+Ran it for 350 epochs. The results are stored at '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Classification_Results/vgg_results_350_epochs_0.001'.
+Best val Acc: 0.879228 , which is for epoch: 346
+
+
+For attribute classification:
+Train the attribute model for 100 epochs at the lr of 0.0007.
+Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Attribute_Classification_Results/vgg_results_100_epochs_0.0007'.
+Best val Acc: 0.969392 , which is for epoch: 100
+val gender_label Acc : 0.9674
+val ethnicity_label Acc : 0.9714
+For the attribute classification, we need to load a pre-trained classification model.
+The pretrained model that was loaded is'/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Classification_Results/vgg_results_300_epochs_0.001/epoch_300.pt'.
+
+Train the attribute model for 110 epochs at the lr of 0.001.
+Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Attribute_Classification_Results/vgg_results_110_epochs_0.001'.
+Best val Acc: 0.9785 , which is for epoch: 109
+val gender_label Acc : 0.9739
+val ethnicity_label Acc : 0.9832
+For the attribute classification, we need to load a pre-trained classification model.
+The pretrained model that was loaded is'/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Classification_Results/vgg_results_350_epochs_0.001/epoch_346.pt'.
+
+Train the attribute model for 101 epochs at the lr of 0.0007.
+Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Attribute_Classification_Results/vgg_results_101_epochs_0.0007'.
+Best val Acc: 0.971363 , which is for epoch: 101
+val gender_label Acc : 0.9660
+val ethnicity_label Acc : 0.9768
+For the attribute classification, we need to load a pre-trained classification model.
+The pretrained model that was loaded is'/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Classification_Results/vgg_results_350_epochs_0.001/epoch_346.pt'.
+
+For joint optim :
+Train the Joint Optim model for 100 epochs at the lr of 0.0007.
+Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Joint_Optim_Results/vgg_results_100_epochs_0.0007_joint_model'.
+Best Class Acc: 0.917825 , which is for epoch: 97
+val gender_label Acc : 0.9747
+val ethnicity_label Acc : 0.9867
+Avg_Attr_Acc : 0.9807
+For the joint optimization, we need to load a pre-trained classification model and attribute model.
+The pretrained classification model that was loaded is'/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Classification_Results/vgg_results_300_epochs_0.001/epoch_300.pt'.
+The pretrained attribute model is '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Attribute_Classification_Results/vgg_results_100_epochs_0.0007/epoch_100.pt'
+
+Train the Joint Optim model for 101 epochs at the lr of 0.0007 using classification model which ran for 350 epochs.
+Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Joint_Optim_Results/vgg_results_101_epochs_0.0007_joint_model'.
+Best Class Acc: 0.927993 , which is for epoch: 94
+val gender_label Acc : 0.9776
+val ethnicity_label Acc : 0.9909
+Avg_Attr_Acc : 0.9824
+For the joint optimization, we need to load a pre-trained classification model and attribute model.
+The pretrained classification model that was loaded is'/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Classification_Results/vgg_results_350_epochs_0.001/epoch_346.pt'.
+The pretrained attribute model is '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Attribute_Classification_Results/vgg_results_110_epochs_0.001/epoch_109.pt'
+
+Train the Joint Optim model for 101 epochs at the lr of 0.001 using classification model which ran for 350 epochs.
+Results are saved in '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Joint_Optim_Results/vgg_results_101_epochs_0.001_joint_model'.
+Best Class Acc: 0.929653 , which is for epoch: 98
+val gender_label Acc : 0.9824
+val ethnicity_label Acc : 0.9890
+Avg_Attr_Acc : 0.9857
+For the joint optimization, we need to load a pre-trained classification model and attribute model.
+The pretrained classification model that was loaded is'/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Classification_Results/vgg_results_350_epochs_0.001/epoch_346.pt'.
+The pretrained attribute model is '/home/n-lab/Documents/Periocular_Project_GitHub/FRGC_S2004_Attribute_Classification_Results/vgg_results_110_epochs_0.001/epoch_109.pt'
+
+
+Things to be done Experimentally
+1. Need to get the eye detected for the complete FRGC dataset using MTCNN
+2. Need to work with UBIRIS v2 dataset to detect
+3. In Deep-PRWIS, the authors have only performed closed setting and they have plotted ROC curves and CMC. They have trained and tested on UBIRIS v2 dataset and FRGC.
+For comparison with this paper we need to check how to plot ROC curve for classification model using the class probabilities.
+4. In SCNN, they have trained the model on one dataset and tested the model on a different dataset using only the feature vectors.
+Need to check how to perform identification using only the feature vectors.
